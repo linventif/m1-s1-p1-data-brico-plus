@@ -1,0 +1,25 @@
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: oracle-brico-plus
+    environment:
+      # Oracle Database credentials
+      ORACLE_PASSWORD: BricoPlus123
+      APP_USER: PROJET_BRICO_PLUS
+      APP_USER_PASSWORD: BricoPlus123
+
+      # Optional: charset and tuning
+      ORACLE_CHARACTERSET: AL32UTF8
+
+    ports:
+      - "1521:1521"   # Oracle listener port
+      - "5500:5500"   # Oracle Enterprise Manager Express
+
+    volumes:
+      - brico_plus_data:/opt/oracle/oradata
+
+    restart: always
+
+volumes:
+  brico_plus_data:
+    name: brico_plus_data
