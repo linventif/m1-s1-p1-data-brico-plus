@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="@pve-colloc:univ" uuid="25481048-ed5c-4463-a313-fdc2167d628b">
-      <driver-ref>oracle.19</driver-ref>
-      <synchronize>true</synchronize>
-      <auto-commit>false</auto-commit>
-      <jdbc-driver>oracle.jdbc.OracleDriver</jdbc-driver>
-      <jdbc-url>jdbc:oracle:thin:@//90.55.205.127:15210/FREEPDB1</jdbc-url>
-      <working-dir>$ProjectFileDir$</working-dir>
-    </data-source>
     <data-source source="LOCAL" name="@pve-moonoy:univ" uuid="01128fcc-80a7-4ec3-85d2-11cbb2a57383">
       <driver-ref>oracle.19</driver-ref>
       <synchronize>true</synchronize>
