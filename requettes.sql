@@ -6,10 +6,10 @@ SELECT DISTINCT g.NomG
 FROM GAMME g
 WHERE NOT EXISTS (
   SELECT *
-  FROM PRODUITS p
-  JOIN VENDRE v ON v.CodeP = p.CodeP
-  JOIN POINTS_DE_VENTE pv ON pv.CodePV = v.CodePV
+  FROM PRODUITS p, VENDRE v, POINTS_DE_VENTE pv
   WHERE p.CodeG = g.CodeG
+    AND v.CodeP = p.CodeP
+    AND pv.CodePV = v.CodePV
     AND pv.TypePV = 'Brico-Express'
 );
 
@@ -27,11 +27,13 @@ SELECT pv.NomPV,
        tpv.Annee,
        tpv.Mois,
        COUNT(DISTINCT tpv.CodeE) AS NbSalaries
-FROM POINTS_DE_VENTE pv
-JOIN TRAVAILLER_PT_VENTE tpv ON tpv.CodePV = pv.CodePV
-WHERE LOWER(pv.TypePV) = 'gsb'
+FROM POINTS_DE_VENTE pv, TRAVAILLER_PT_VENTE tpv
+WHERE pv.CodePV = tpv.CodePV
+  AND LOWER(pv.TypePV) = 'gsb'
 GROUP BY pv.NomPV, pv.RuePV, pv.CPostalPV, pv.VillePV, tpv.Annee, tpv.Mois
+
 UNION ALL
+
 -- Supermarchés sans employés
 SELECT pv.NomPV,
        pv.RuePV,
@@ -43,7 +45,9 @@ SELECT pv.NomPV,
 FROM POINTS_DE_VENTE pv
 WHERE LOWER(pv.TypePV) = 'gsb'
   AND NOT EXISTS (
-    SELECT * FROM TRAVAILLER_PT_VENTE t WHERE t.CodePV = pv.CodePV
+    SELECT *
+    FROM TRAVAILLER_PT_VENTE t
+    WHERE t.CodePV = pv.CodePV
   )
 ORDER BY NomPV, Annee, Mois;
 
@@ -56,14 +60,14 @@ SELECT DISTINCT u.NomU, u.RueU, u.CPostalU, u.VilleU
 FROM USINES u
 WHERE EXISTS (
   SELECT *
-  FROM DEPARTEMENTS d
-  JOIN AUTORISER a ON a.CodeD = d.CodeD
-  WHERE d.CodeU = u.CodeU
+  FROM DEPARTEMENTS d, AUTORISER a
+  WHERE a.CodeD = d.CodeD
+    AND d.CodeU = u.CodeU
     AND NOT EXISTS (
       SELECT *
-      FROM TRAVAILLER_USINE tu
-      JOIN POSSEDER ps ON ps.CodeE = tu.CodeE
-      WHERE tu.CodeD = d.CodeD
+      FROM TRAVAILLER_USINE tu, POSSEDER ps
+      WHERE ps.CodeE = tu.CodeE
+        AND tu.CodeD = d.CodeD
         AND ps.CodeQ = a.CodeQ
     )
 );
@@ -73,38 +77,54 @@ WHERE EXISTS (
 -- 4️⃣  Donner le nom et le type du point de vente ayant le chiffre d’affaires
 --      le plus élevé pour le mois en cours
 --------------------------------------------------------------------------------
-SELECT pv.NomPV,
-       pv.TypePV,
-       SUM(v.Qte_Vendue * f.PrixUnitP) AS ChiffreAffaires
-FROM POINTS_DE_VENTE pv, VENDRE v, FACTURER f
-where v.CodePV = pv.CodePV
-AND f.CodeP = v.CodeP
-AND f.Annee = v.Annee
-AND f.Mois  = v.Mois
-WHERE v.Annee = EXTRACT(YEAR FROM CURRENT_DATE)
-  AND v.Mois  = EXTRACT(MONTH FROM CURRENT_DATE)
-GROUP BY pv.NomPV, pv.TypePV
-ORDER BY ChiffreAffaires DESC
-FETCH FIRST 1 ROW ONLY;
+SELECT
+    pv.NomPV,
+    pv.TypePV,
+    SUM(v.Qte_Vendue * f.PrixUnitP) AS ChiffreAffaires
+FROM
+    POINTS_DE_VENTE pv,
+    VENDRE v,
+    FACTURER f
+WHERE
+    v.CodePV = pv.CodePV
+    AND f.CodeP = v.CodeP
+    AND f.Annee = v.Annee
+    AND f.Mois  = v.Mois
+    AND v.Annee = EXTRACT(YEAR FROM CURRENT_DATE)
+    AND v.Mois  = EXTRACT(MONTH FROM CURRENT_DATE)
+GROUP BY
+    pv.NomPV, pv.TypePV
+HAVING
+    SUM(v.Qte_Vendue * f.PrixUnitP) = (
+        SELECT MAX(SUM(v2.Qte_Vendue * f2.PrixUnitP))
+        FROM POINTS_DE_VENTE pv2, VENDRE v2, FACTURER f2
+        WHERE v2.CodePV = pv2.CodePV
+          AND f2.CodeP = v2.CodeP
+          AND f2.Annee = v2.Annee
+          AND f2.Mois  = v2.Mois
+          AND v2.Annee = EXTRACT(YEAR FROM CURRENT_DATE)
+          AND v2.Mois  = EXTRACT(MONTH FROM CURRENT_DATE)
+        GROUP BY pv2.CodePV
+    );
 
 
 --------------------------------------------------------------------------------
 -- 5️⃣  Produits vendus en Haute-Garonne mais non fabriqués dans ce département
 --------------------------------------------------------------------------------
+
 SELECT DISTINCT p.NomP, fct.PrixUnitP
-FROM PRODUITS p
-JOIN VENDRE v ON v.CodeP = p.CodeP
-JOIN POINTS_DE_VENTE pv ON pv.CodePV = v.CodePV
-JOIN FACTURER fct
-  ON fct.CodeP = p.CodeP
- AND fct.Annee = v.Annee
- AND fct.Mois  = v.Mois
-WHERE pv.CPostalPV LIKE '31%'
+FROM PRODUITS p, VENDRE v, POINTS_DE_VENTE pv, FACTURER fct
+WHERE p.CodeP = v.CodeP
+  AND pv.CodePV = v.CodePV
+  AND fct.CodeP = p.CodeP
+  AND fct.Annee = v.Annee
+  AND fct.Mois  = v.Mois
+  AND pv.CPostalPV LIKE '31%'
   AND NOT EXISTS (
-    SELECT 1
-    FROM FABRIQUER_ASSEMBLER1 fa
-    JOIN USINES u ON u.CodeU = fa.CodeU
-    WHERE fa.CodeP = p.CodeP
+    SELECT *
+    FROM FABRIQUER_ASSEMBLER1 fa, USINES u
+    WHERE fa.CodeU = u.CodeU
+      AND fa.CodeP = p.CodeP
       AND u.CPostalU LIKE '31%'
   )
 ORDER BY fct.PrixUnitP DESC;
@@ -117,9 +137,9 @@ SELECT p1.Annee,
        e.NomE,
        e.PrenomE,
        (p1.FixeMensuele * p1.Indicesale) AS SalaireMensuel
-FROM PAYER1 p1
-JOIN EMPLOYES e ON e.CodeE = p1.CodeE
-WHERE p1.Annee >= EXTRACT(YEAR FROM CURRENT_DATE) - 1
+FROM PAYER1 p1, EMPLOYES e
+WHERE e.CodeE = p1.CodeE
+  AND p1.Annee >= EXTRACT(YEAR FROM CURRENT_DATE) - 1
 ORDER BY p1.Annee, e.NomE, e.PrenomE;
 
 
@@ -127,14 +147,13 @@ ORDER BY p1.Annee, e.NomE, e.PrenomE;
 -- 7️⃣  Usine, type, ville et département homonyme d’un autre département
 --------------------------------------------------------------------------------
 SELECT DISTINCT u.NomU, tu.NomTU, u.VilleU, d1.NomD
-FROM USINES u
-JOIN AVOIR_TYPE atp ON atp.CodeU = u.CodeU
-JOIN TYPEU tu ON tu.CodeTU = atp.CodeTU
-JOIN DEPARTEMENTS d1 ON d1.CodeU = u.CodeU
-JOIN DEPARTEMENTS d2
-  ON d2.NomD = d1.NomD
- AND d2.CodeD <> d1.CodeD
- AND d2.CodeU <> d1.CodeU;
+FROM USINES u, AVOIR_TYPE atp, TYPEU tu, DEPARTEMENTS d1, DEPARTEMENTS d2
+WHERE atp.CodeU = u.CodeU
+  AND tu.CodeTU = atp.CodeTU
+  AND d1.CodeU = u.CodeU
+  AND d2.NomD = d1.NomD
+  AND d2.CodeD <> d1.CodeD
+  AND d2.CodeU <> d1.CodeU;
 
 
 --------------------------------------------------------------------------------
@@ -143,12 +162,12 @@ JOIN DEPARTEMENTS d2
 SELECT pv.NomPV, pv.TypePV
 FROM POINTS_DE_VENTE pv
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM PRODUITS p
-  JOIN GAMME g ON g.CodeG = p.CodeG
-  WHERE UPPER(g.NomG) = 'CUISINE'
+  SELECT *
+  FROM PRODUITS p, GAMME g
+  WHERE g.CodeG = p.CodeG
+    AND lower(g.NomG) = 'cuisine'
     AND NOT EXISTS (
-      SELECT 1
+      SELECT *
       FROM VENDRE v
       WHERE v.CodePV = pv.CodePV
         AND v.CodeP  = p.CodeP
@@ -162,19 +181,19 @@ WHERE NOT EXISTS (
 --      la même année (usine associée au département)
 --------------------------------------------------------------------------------
 SELECT DISTINCT e.NomE, e.PrenomE
-FROM EMPLOYES e
-JOIN DIRIGER d ON d.CodeE = e.CodeE
-JOIN DEPARTEMENTS dep ON dep.CodeD = d.CodeD
-WHERE EXISTS (
-  SELECT 1
-  FROM RESPONSABLE r
-  JOIN FABRIQUER_ASSEMBLER1 fa ON fa.CodeU = dep.CodeU
-  JOIN PRODUITS p ON p.CodeP = fa.CodeP
-  WHERE r.CodeE = e.CodeE
-    AND p.CodeG  = r.CodeG
-    AND EXTRACT(YEAR FROM d.DateDebutDir) = r.Annee
-    AND EXTRACT(YEAR FROM fa.DateFab)     = r.Annee
-);
+FROM EMPLOYES e, DIRIGER d, DEPARTEMENTS dep
+WHERE d.CodeE = e.CodeE
+  AND dep.CodeD = d.CodeD
+  AND EXISTS (
+    SELECT *
+    FROM RESPONSABLE r, FABRIQUER_ASSEMBLER1 fa, PRODUITS p
+    WHERE fa.CodeU = dep.CodeU
+      AND p.CodeP = fa.CodeP
+      AND r.CodeE = e.CodeE
+      AND p.CodeG = r.CodeG
+      AND EXTRACT(YEAR FROM d.DateDebutDir) = r.Annee
+      AND EXTRACT(YEAR FROM fa.DateFab) = r.Annee
+  );
 
 
 --------------------------------------------------------------------------------
