@@ -5,7 +5,7 @@
 SELECT DISTINCT g.NomG
 FROM GAMME g
 WHERE NOT EXISTS (
-  SELECT 1
+  SELECT *
   FROM PRODUITS p
   JOIN VENDRE v ON v.CodeP = p.CodeP
   JOIN POINTS_DE_VENTE pv ON pv.CodePV = v.CodePV
@@ -29,7 +29,7 @@ SELECT pv.NomPV,
        COUNT(DISTINCT tpv.CodeE) AS NbSalaries
 FROM POINTS_DE_VENTE pv
 JOIN TRAVAILLER_PT_VENTE tpv ON tpv.CodePV = pv.CodePV
-WHERE LOWER(pv.TypePV) = 'supermarche'
+WHERE LOWER(pv.TypePV) = 'gsb'
 GROUP BY pv.NomPV, pv.RuePV, pv.CPostalPV, pv.VillePV, tpv.Annee, tpv.Mois
 UNION ALL
 -- Supermarchés sans employés
@@ -41,9 +41,9 @@ SELECT pv.NomPV,
        NULL AS Mois,
        0 AS NbSalaries
 FROM POINTS_DE_VENTE pv
-WHERE LOWER(pv.TypePV) = 'supermarche'
+WHERE LOWER(pv.TypePV) = 'gsb'
   AND NOT EXISTS (
-    SELECT 1 FROM TRAVAILLER_PT_VENTE t WHERE t.CodePV = pv.CodePV
+    SELECT * FROM TRAVAILLER_PT_VENTE t WHERE t.CodePV = pv.CodePV
   )
 ORDER BY NomPV, Annee, Mois;
 
@@ -55,12 +55,12 @@ ORDER BY NomPV, Annee, Mois;
 SELECT DISTINCT u.NomU, u.RueU, u.CPostalU, u.VilleU
 FROM USINES u
 WHERE EXISTS (
-  SELECT 1
+  SELECT *
   FROM DEPARTEMENTS d
   JOIN AUTORISER a ON a.CodeD = d.CodeD
   WHERE d.CodeU = u.CodeU
     AND NOT EXISTS (
-      SELECT 1
+      SELECT *
       FROM TRAVAILLER_USINE tu
       JOIN POSSEDER ps ON ps.CodeE = tu.CodeE
       WHERE tu.CodeD = d.CodeD
@@ -76,12 +76,11 @@ WHERE EXISTS (
 SELECT pv.NomPV,
        pv.TypePV,
        SUM(v.Qte_Vendue * f.PrixUnitP) AS ChiffreAffaires
-FROM POINTS_DE_VENTE pv
-JOIN VENDRE v ON v.CodePV = pv.CodePV
-JOIN FACTURER f
-  ON f.CodeP = v.CodeP
- AND f.Annee = v.Annee
- AND f.Mois  = v.Mois
+FROM POINTS_DE_VENTE pv, VENDRE v, FACTURER f
+where v.CodePV = pv.CodePV
+AND f.CodeP = v.CodeP
+AND f.Annee = v.Annee
+AND f.Mois  = v.Mois
 WHERE v.Annee = EXTRACT(YEAR FROM CURRENT_DATE)
   AND v.Mois  = EXTRACT(MONTH FROM CURRENT_DATE)
 GROUP BY pv.NomPV, pv.TypePV
