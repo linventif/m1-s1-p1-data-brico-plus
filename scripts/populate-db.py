@@ -125,7 +125,7 @@ PV_TYPES = ["GSB", "Brico-Express"]
 # -----------------------
 N_EMP = 50
 N_QUALIF = 50
-N_USINES = 30
+N_USINES = 15
 N_PV = 50
 N_PRODUITS = 50
 
@@ -270,13 +270,13 @@ def gen_posseder(employes, qualifs):
         qset = random.sample(qualifs, k=random.randint(1, 3))
         for q in qset:
             rows.append((e[0], q[0]))
-    # 50 lignes min
-    return rows[:max(50, len(rows))]
+    # 500 lignes min
+    return rows[:max(500, len(rows))]
 
 def gen_assembler(produits):
     rows = []
     used = set()
-    for _ in range(50):
+    for _ in range(500):
         a, b = random.sample(produits, 2)
         if a[0] == b[0]:
             continue
@@ -305,49 +305,60 @@ def gen_avoir_type(usines, typeu):
 
 def gen_diriger(employes, departements):
     rows = []
-    for _ in range(50):
+    for _ in range(500):
         e = random.choice(employes)[0]
         d = random.choice(departements)[0]
         date = random.choice(cal2_dates)
         rows.append((e, d, date))
     # unique par PK (CODEE, CODED, DATEDEBUTDIR) => dédoublonne
     rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:50]
+    return rows[:500]
 
 def gen_autoriser(qualifs, departements):
     rows = []
-    for d in random.sample(departements, k=min(50, len(departements))):
+    for d in random.sample(departements, k=min(500, len(departements))):
         for q in random.sample(qualifs, k=random.randint(2, 5)):
             rows.append((q[0], d[0]))
-    return rows[:50]
+    return rows[:500]
 
 def gen_fabriquer(usines, produits):
     rows = []
+    used = set()
     # 70% des fabrications hors HG pour servir la requête 5 (vendus en HG mais fabriqués ailleurs)
     ext_usines = [u for u in usines if not str(u[3]).startswith("31")]
     loc_usines = [u for u in usines if str(u[3]).startswith("31")]
-    for _ in range(50):
+
+    attempts = 0
+    max_attempts = 2000  # Limite pour éviter une boucle infinie
+
+    while len(rows) < 500 and attempts < max_attempts:
+        attempts += 1
         if ext_usines and random.random() < 0.7:
             u = random.choice(ext_usines)
         else:
             u = random.choice(loc_usines or usines)
         p = random.choice(produits)
         d = random.choice(cal1_dates)
-        q = random.randint(5, 300)
-        rows.append((u[0], p[0], d, q))
-    rows = list({(a, b, c, d) for (a, b, c, d) in rows})
-    return rows[:50]
+
+        # Vérifie l'unicité de la combinaison (CODEU, CODEP, DATEFAB)
+        key = (u[0], p[0], d)
+        if key not in used:
+            used.add(key)
+            q = random.randint(5, 300)
+            rows.append((u[0], p[0], d, q))
+
+    return rows
 
 def gen_responsable(employes, gammes):
     rows = []
     years = random.sample(cal4, k=5)
-    for _ in range(50):
+    for _ in range(500):
         e = random.choice(employes)[0]
         g = random.choice(gammes)[0]
         y = random.choice(years)
         rows.append((e, g, y))
     rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:50]
+    return rows[:500]
 
 def gen_payer2(gammes):
     rows = []
@@ -355,7 +366,7 @@ def gen_payer2(gammes):
     for g in gammes:
         for y in years:
             rows.append((g[0], y, round(random.uniform(0.05, 0.25), 2)))
-    return rows[:50]
+    return rows[:500]
 
 def gen_facturer(produits):
     rows = []
@@ -363,10 +374,11 @@ def gen_facturer(produits):
         for (m, y) in random.sample(cal3, k= random.randint(2, 6)):
             pu = round(random.uniform(4.0, 1500.0), 2)
             rows.append((p[0], m, y, pu))
-    return rows[:50]
+    return rows[:500]
 
 def gen_vendre(employes, pvs, produits):
     rows = []
+    used = set()
     # Pour satisfaire la requête 1 : aucune vente Brico-Express pour une gamme donnée (ex: quincaillerie)
     # -> On évite de vendre des produits de la gamme "quincaillerie" en Brico-Express
     quinca_code = None
@@ -375,7 +387,11 @@ def gen_vendre(employes, pvs, produits):
             quinca_code = f"G{str(i).zfill(2)}"
             break
 
-    for _ in range(200):
+    attempts = 0
+    max_attempts = 5000  # Limite pour éviter une boucle infinie
+
+    while len(rows) < 500 and attempts < max_attempts:
+        attempts += 1
         e = random.choice(employes)[0]
         pv = random.choice(pvs)
         p = random.choice(produits)
@@ -383,10 +399,15 @@ def gen_vendre(employes, pvs, produits):
         if pv[-1] == "Brico-Express" and p[3] == quinca_code:
             continue
         (m, y) = random.choice(cal3)
-        q = random.randint(1, 50)
-        rows.append((e, pv[0], p[0], m, y, q))
-    rows = list({(a, b, c, d, e, f) for (a, b, c, d, e, f) in rows})
-    return rows[:50]
+
+        # Vérifie l'unicité de la combinaison (CODEE, CODEPV, CODEP, MOIS, ANNEE)
+        key = (e, pv[0], p[0], m, y)
+        if key not in used:
+            used.add(key)
+            q = random.randint(1, 50)
+            rows.append((e, pv[0], p[0], m, y, q))
+
+    return rows
 
 def gen_payer1(employes):
     rows = []
@@ -396,29 +417,94 @@ def gen_payer1(employes):
             fixe = round(random.uniform(1300, 4200), 2)
             idx = random.randint(1, 10)
             rows.append((e[0], y, fixe, idx))
-    return rows[:50]
+    return rows[:500]
 
 def gen_travailler_usine(employes, departements):
     rows = []
-    for _ in range(80):
+    used = set()
+    attempts = 0
+    max_attempts = 2000
+
+    while len(rows) < 500 and attempts < max_attempts:
+        attempts += 1
         e = random.choice(employes)[0]
         d = random.choice(departements)[0]
         (m, y) = random.choice(cal3)
-        hrs = round(random.uniform(10, 180), 2)
-        rows.append((e, d, m, y, hrs))
-    rows = list({(a, b, c, d, e) for (a, b, c, d, e) in rows})
-    return rows[:50]
+
+        # Vérifie l'unicité de la combinaison (CODEE, CODED, MOIS, ANNEE)
+        key = (e, d, m, y)
+        if key not in used:
+            used.add(key)
+            hrs = round(random.uniform(10, 180), 2)
+            rows.append((e, d, m, y, hrs))
+
+    return rows
 
 def gen_travailler_pv(employes, pvs):
     rows = []
-    for _ in range(80):
+    used = set()
+    attempts = 0
+    max_attempts = 2000
+
+    while len(rows) < 500 and attempts < max_attempts:
+        attempts += 1
         e = random.choice(employes)[0]
         pv = random.choice(pvs)[0]
         (m, y) = random.choice(cal3)
-        hrs = round(random.uniform(5, 160), 2)
-        rows.append((e, pv, m, y, hrs))
-    rows = list({(a, b, c, d, e) for (a, b, c, d, e) in rows})
-    return rows[:50]
+
+        # Vérifie l'unicité de la combinaison (CODEE, CODEPV, MOIS, ANNEE)
+        key = (e, pv, m, y)
+        if key not in used:
+            used.add(key)
+            hrs = round(random.uniform(5, 160), 2)
+            rows.append((e, pv, m, y, hrs))
+
+    return rows
+
+# -----------------------
+# NETTOYAGE DES DONNÉES
+# -----------------------
+def clear_all_data(cursor):
+    """Vide toutes les tables dans l'ordre correct (dépendances)"""
+    tables_to_clear = [
+        # Relations d'abord (qui dépendent des entités)
+        "TRAVAILLER_PT_VENTE",
+        "TRAVAILLER_USINE",
+        "PAYER1",
+        "VENDRE",
+        "FACTURER",
+        "PAYER2",
+        "RESPONSABLE",
+        "FABRIQUER_ASSEMBLER1",
+        "AUTORISER",
+        "DIRIGER",
+        "AVOIR_TYPE",
+        "ASSEMBLER",
+        "POSSEDER",
+        # Entités ensuite
+        "PRODUITS",
+        "POINTS_DE_VENTE",
+        "DEPARTEMENTS",
+        "QUALIFICATIONS",
+        "EMPLOYES",
+        "USINES",
+        "CALENDRIER4",
+        "CALENDRIER3",
+        "CALENDRIER2",
+        "CALENDRIER1",
+        "GAMME",
+        "TYPEU"
+    ]
+
+    print("🧹 Nettoyage des données existantes...")
+    for table in tables_to_clear:
+        try:
+            cursor.execute(f"DELETE FROM {table}")
+            print(f"   ✓ {table} vidée")
+        except Exception as e:
+            print(f"   ⚠️  Erreur lors du nettoyage de {table}: {e}")
+
+    print("🧹 Nettoyage terminé.\n")
 
 # -----------------------
 # INSERTS
@@ -427,6 +513,9 @@ def main():
     print(f"Connecting to {USER}@{HOST}:{PORT}/{SERVICE} ...")
     with oracledb.connect(user=USER, password=PASS, dsn=DSN) as con:
         cur = con.cursor()
+
+        # Nettoyage des données existantes
+        clear_all_data(cur)
 
         # Parents
         typeu = gen_typeu()
