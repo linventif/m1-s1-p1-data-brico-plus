@@ -3,6 +3,7 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/requettes.sql" dialect="Oracle" />
     <file url="file://$PROJECT_DIR$/scripts/create-db.sql" dialect="OracleSqlPlus" />
+    <file url="file://$PROJECT_DIR$/scripts/index-db.sql" dialect="OracleSqlPlus" />
     <file url="file://$PROJECT_DIR$/scripts/wipe-db.sql" dialect="OracleSqlPlus" />
   </component>
 </project>
