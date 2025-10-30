@@ -121,37 +121,37 @@ DEPTS = ["fabrication", "assemblage", "RH", "expédition", "logistique", "direct
 PV_TYPES = ["GSB", "Brico-Express"]
 
 # -----------------------
-# VOLUMÉTRIE VISÉE
+# VOLUMÉTRIE VISÉE (4x augmentation)
 # -----------------------
-N_EMP = 50
-N_QUALIF = 50
-N_USINES = 15
-N_PV = 50
-N_PRODUITS = 50
+N_EMP = 200  # 50 -> 200
+N_QUALIF = 200  # 50 -> 200
+N_USINES = 60  # 15 -> 60
+N_PV = 200  # 50 -> 200
+N_PRODUITS = 400  # 50 -> 400 (beaucoup plus de produits)
 
-# Calendriers (~50 lignes)
-N_CAL1 = 50  # DATEFAB
-N_CAL2 = 50  # DATEDEBUTDIR
-# CAL3 = 50 couples (mois, année) <= année courante  :contentReference[oaicite:6]{index=6}
-# CAL4 = 50 années (<= année courante)
+# Calendriers (~200 lignes, 4x augmentation)
+N_CAL1 = 200  # DATEFAB
+N_CAL2 = 200  # DATEDEBUTDIR
+# CAL3 = 200 couples (mois, année) <= année courante
+# CAL4 = 200 années (<= année courante)
 YEAR_NOW = dt.date.today().year
 MONTH_NOW = dt.date.today().month
 
-# Construit 50 (mois, année) en remontant depuis l'année courante
+# Construit 200 (mois, année) en remontant depuis l'année courante
 cal3 = []
 y, m = YEAR_NOW, MONTH_NOW
-for _ in range(60):  # génére assez, on tronquera à 50
+for _ in range(240):  # génére assez, on tronquera à 200
     cal3.append((m, y))
     m -= 1
     if m == 0:
         m = 12
         y -= 1
-cal3 = cal3[:50]
+cal3 = cal3[:200]
 
-# 50 années : YEAR_NOW-49 .. YEAR_NOW (toutes <= année courante)  :contentReference[oaicite:7]{index=7}
-cal4 = list(range(YEAR_NOW - 49, YEAR_NOW + 1))
+# 200 années : 1985 .. 2025 (plage réaliste pour l'entreprise)
+cal4 = list(range(1985, 2026))  # 1985 à 2025 inclus
 
-# 50 dates <= aujourd’hui pour CAL1 & CAL2  :contentReference[oaicite:8]{index=8}
+# 200 dates <= aujourd'hui pour CAL1 & CAL2
 def sample_dates(n):
     base = dt.date(YEAR_NOW-1, 1, 1)
     last = dt.date.today()
@@ -175,14 +175,27 @@ cal2_dates = sample_dates(N_CAL2)
 def gen_employes(n=N_EMP):
     rows = []
     for code in range(1, n+1):
-        nom = random.choice([
-            "Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois",
-            "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David"
-        ])
-        prenom = random.choice([
-            "Lucas", "Louis", "Hugo", "Arthur", "Jules", "Adam", "Léo", "Noah",
-            "Emma", "Louise", "Chloé", "Lina", "Mia", "Anna", "Zoé", "Léa"
-        ])
+        # Quelques Easter eggs furry dans les noms OwO
+        if random.random() < 0.05:  # 5% de chance
+            nom = random.choice([
+                "Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois",
+                "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David",
+                "Wolf", "Fox", "Husky", "Pawson", "Tailworth"  # Easter eggs furry
+            ])
+            prenom = random.choice([
+                "Lucas", "Louis", "Hugo", "Arthur", "Jules", "Adam", "Léo", "Noah",
+                "Emma", "Louise", "Chloé", "Lina", "Mia", "Anna", "Zoé", "Léa",
+                "Foxy", "Luna", "Kitsune", "Akira", "Nyx"  # Easter eggs furry
+            ])
+        else:
+            nom = random.choice([
+                "Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois",
+                "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David"
+            ])
+            prenom = random.choice([
+                "Lucas", "Louis", "Hugo", "Arthur", "Jules", "Adam", "Léo", "Noah",
+                "Emma", "Louise", "Chloé", "Lina", "Mia", "Anna", "Zoé", "Léa"
+            ])
         vpers, cppers = pick_city(True)
         vpro, cppro = pick_city(True)
         rows.append((
@@ -196,11 +209,20 @@ def gen_employes(n=N_EMP):
 def gen_qualifs(n=N_QUALIF):
     rows = []
     for code in range(1, n+1):
-        nom = random.choice([
-            "Vendeur", "Chef d'équipe", "Opérateur", "Magasinier", "Technicien",
-            "Responsable RH", "Contrôleur qualité", "Acheteur", "Comptable", "Électricien",
-            "Plombier", "Carreleur", "Peintre", "Soudeur", "Monteur", "Chargé logistique"
-        ]) + f" {random.randint(1,9)}"
+        # Quelques Easter eggs furry dans les qualifications
+        if random.random() < 0.03:  # 3% de chance
+            nom = random.choice([
+                "Vendeur", "Chef d'équipe", "Opérateur", "Magasinier", "Technicien",
+                "Responsable RH", "Contrôleur qualité", "Acheteur", "Comptable", "Électricien",
+                "Plombier", "Carreleur", "Peintre", "Soudeur", "Monteur", "Chargé logistique",
+                "Fursuit Designer", "Bilboquet Craftsman", "OwO Specialist"  # Easter eggs
+            ]) + f" {random.randint(1,9)}"
+        else:
+            nom = random.choice([
+                "Vendeur", "Chef d'équipe", "Opérateur", "Magasinier", "Technicien",
+                "Responsable RH", "Contrôleur qualité", "Acheteur", "Comptable", "Électricien",
+                "Plombier", "Carreleur", "Peintre", "Soudeur", "Monteur", "Chargé logistique"
+            ]) + f" {random.randint(1,9)}"
         taux = round(random.uniform(11.5, 28.0), 2)  # €/h
         rows.append((code, nom, taux, None))
     # Crée quelques liens de "complétée par" (réflexive 0,n <> 0,1)
@@ -212,9 +234,19 @@ def gen_usines(n=N_USINES):
     rows = []
     for code in range(1, n+1):
         city, cp = pick_city(True)
-        rows.append((code,
-                     f"Usine {city} {code}",
-                     street(), cp, city, phone(hg=cp.startswith("31"))))
+        # Quelques Easter eggs furry dans les noms d'usines
+        if random.random() < 0.08:  # 8% de chance
+            nom_usine = random.choice([
+                f"Usine {city} {code}",
+                f"FluffyWorks {city}",
+                f"PawCorp Factory {city}",
+                f"OwO Manufacturing {city}",
+                f"Bilboquet & Co {city}"
+            ])
+        else:
+            nom_usine = f"Usine {city} {code}"
+
+        rows.append((code, nom_usine, street(), cp, city, phone(hg=cp.startswith("31"))))
     return rows
 
 def gen_typeu():
@@ -251,32 +283,166 @@ def gen_points_vente(n=N_PV):
                      random.choices(PV_TYPES, weights=[0.6, 0.4])[0]))  # un peu plus de GSB
     return rows
 
+# -----------------------
+# PRODUITS PAR TYPE D'USINE (pour réalisme)
+# -----------------------
+PRODUITS_PAR_TYPE = {
+    "assemblage": {
+        "jardin et piscine": [
+            "Tondeuse électrique", "Tondeuse thermique", "Coupe-bordures", "Taille-haie",
+            "Souffleur", "Scarificateur", "Bineuse", "Pompe piscine", "Filtre piscine",
+            "Robot piscine", "Échelle piscine", "Bâche piscine", "Alarme piscine"
+        ],
+        "mobilier intérieur": [
+            "Canapé d'angle", "Fauteuil relax", "Table basse", "Bibliothèque",
+            "Armoire penderie", "Commode", "Table à manger", "Chaises", "Lit",
+            "Matelas", "Sommier", "Table de chevet", "Bureau", "Étagères",
+            "Fursuit tête", "Fursuit paws", "Fursuit queue", "Costume mascotte OwO"
+        ],
+        "outillage": [
+            "Perceuse visseuse", "Perceuse à percussion", "Visseuse impact",
+            "Scie circulaire", "Scie sauteuse", "Ponceuse orbitale", "Ponceuse excentrique",
+            "Défonceuse", "Raboteuse", "Meuleuse", "Perforateur", "Marteau piqueur",
+            "Bilboquet artisanal", "Bilboquet pro", "Kit bilboquet UwU"
+        ],
+        "électricité et domotique": [
+            "Tableau électrique", "Disjoncteur", "Interrupteur différentiel",
+            "Box domotique", "Prise connectée", "Interrupteur connecté",
+            "Détecteur mouvement", "Caméra surveillance", "Portier vidéo"
+        ]
+    },
+    "scierie": {
+        "jardin et piscine": [
+            "Planche pin", "Planche chêne", "Lame terrasse", "Poteau bois",
+            "Panneau bois", "Bardage bois", "Cloture bois", "Pergola bois",
+            "Abri jardin", "Jardinière bois", "Bac à sable", "Balançoire",
+            "Bilboquet bois massif", "Bilboquet chêne premium"
+        ],
+        "mobilier intérieur": [
+            "Plan travail bois", "Étagère pin", "Étagère chêne", "Planche étagère",
+            "Tasseau bois", "Moulure bois", "Corniche bois", "Plinthe bois",
+            "Parquet massif", "Parquet contrecollé", "Stratifié", "Lambris",
+            "Fursuit armature bois", "Support costume OwO"
+        ],
+        "carrelage et parquet": [
+            "Parquet chêne massif", "Parquet hêtre", "Parquet bambou",
+            "Parquet flottant", "Lame PVC", "Sol vinyle", "Sous-couche parquet"
+        ],
+        "matériaux de construction": [
+            "Poutre bois", "Chevron", "Latte", "Madrier", "Planche coffrage",
+            "OSB", "Contreplaqué", "Médium MDF", "Aggloméré", "Panneau OSB"
+        ]
+    },
+    "métallurgie": {
+        "quincaillerie": [
+            "Vis inox", "Boulon acier", "Écrou", "Rondelle", "Clou", "Pointe",
+            "Cheville", "Tire-fond", "Tige filetée", "Chaîne acier", "Câble acier",
+            "Serrure", "Verrou", "Cadenas", "Gond", "Paumelle", "Charnière"
+        ],
+        "plomberie et chauffage": [
+            "Tube cuivre", "Raccord cuivre", "Tube PER", "Raccord PER",
+            "Radiateur acier", "Radiateur fonte", "Collecteur chauffage",
+            "Vanne d'arrêt", "Clapet anti-retour", "Détendeur gaz"
+        ],
+        "électricité et domotique": [
+            "Gaine électrique", "Tube IRL", "Chemin câbles", "Goulottes",
+            "Boîtier étanche", "Armoire électrique", "Rail DIN", "Borne connexion"
+        ],
+        "outillage": [
+            "Clé plate", "Clé à pipe", "Tournevis", "Pince", "Serre-joint",
+            "Étau", "Lime", "Râpe", "Burins", "Pointeau", "Compas"
+        ]
+    },
+    "fonderie": {
+        "plomberie et chauffage": [
+            "Mitigeur cuisine", "Mitigeur douche", "Robinet lavabo",
+            "Robinet évier", "Douchette", "Colonne douche", "Bonde",
+            "Siphon", "Collecteur fonte", "Regard fonte", "Bouche égout"
+        ],
+        "salle de bain et WC": [
+            "Robinet baignoire", "Mitigeur thermostatique", "Pomme douche",
+            "Flexible douche", "Barre douche", "Support douchette",
+            "Évacuation douche", "Bonde baignoire", "Trop-plein"
+        ],
+        "luminaire": [
+            "Applique murale", "Suspension", "Lustre", "Spot encastrable",
+            "Réglette LED", "Plafonnier", "Lampadaire", "Lampe bureau",
+            "Projecteur LED", "Borne éclairage", "Balise LED"
+        ],
+        "quincaillerie": [
+            "Poignée porte", "Béquille", "Crémone", "Espagnolette",
+            "Ferme-porte", "Butée porte", "Heurtoir", "Boîte aux lettres"
+        ]
+    }
+}
+
 def gen_produits(n=N_PRODUITS):
+    """Génère des produits réalistes selon les types d'usines"""
     rows = []
-    for code in range(1, n+1):
-        nom = random.choice([
-            "Perceuse", "Peinture acrylique", "Câble électrique", "Mitigeur", "Panneau LED",
-            "Tasseau bois", "Faïence murale", "Robinet thermostatique", "Visserie inox",
-            "Parquet chêne", "Tondeuse", "Pompe piscine"
-        ]) + f" {random.randint(100,999)}"
-        marque = random.choice(["ProLine", "MaisonPro", "BuildX", "Crafto", "Lumina", "AquaFix"])
-        codeg = gen_gammes()[random.randint(0, len(GAMMES)-1)][0]
+    code = 1
+
+    # Répartit les produits entre les types d'usines
+    produits_par_type_usine = n // len(TYPEU)  # ~100 produits par type d'usine
+
+    for type_usine in TYPEU:
+        if type_usine not in PRODUITS_PAR_TYPE:
+            continue
+
+        # Pour chaque gamme de ce type d'usine
+        for gamme_nom, produits_base in PRODUITS_PAR_TYPE[type_usine].items():
+            # Trouve le code de la gamme
+            codeg = None
+            for i, g_nom in enumerate(GAMMES, start=1):
+                if g_nom == gamme_nom:
+                    codeg = f"G{str(i).zfill(2)}"
+                    break
+
+            if not codeg:
+                continue
+
+            # Génère plusieurs variantes de chaque produit de base
+            for produit_base in produits_base:
+                if code > n:
+                    break
+
+                # Variantes avec marques et modèles
+                marques = ["ProLine", "MaisonPro", "BuildX", "Crafto", "Lumina", "AquaFix",
+                          "TechMax", "HomeStyle", "PowerTool", "QualityPlus",
+                          "FluffyCraft", "PawsTools", "OwO-Industries", "UwU-Corp"]  # Easter eggs furry
+
+                for i in range(min(3, (n - code + 1))):  # 1-3 variantes par produit
+                    if code > n:
+                        break
+                    marque = random.choice(marques)
+                    modele = random.randint(100, 999)
+                    nom_final = f"{produit_base} {modele}"
+
+                    rows.append((code, nom_final, marque, codeg))
+                    code += 1
+
+    # Complete avec des produits génériques si nécessaire
+    while len(rows) < n:
+        nom = f"Produit générique {random.randint(1000, 9999)}"
+        marque = random.choice(["Generic", "Standard", "Basic"])
+        codeg = f"G{random.randint(1, len(GAMMES)):02d}"
         rows.append((code, nom, marque, codeg))
-    return rows
+        code += 1
+
+    return rows[:n]
 
 def gen_posseder(employes, qualifs):
     rows = []
     for e in employes:
-        qset = random.sample(qualifs, k=random.randint(1, 3))
+        qset = random.sample(qualifs, k=random.randint(2, 5))  # Plus de qualifications par employé
         for q in qset:
             rows.append((e[0], q[0]))
-    # 500 lignes min
-    return rows[:max(500, len(rows))]
+    # 2000 lignes (4x plus)
+    return rows[:max(2000, len(rows))]
 
 def gen_assembler(produits):
     rows = []
     used = set()
-    for _ in range(500):
+    for _ in range(2000):  # 4x plus de données
         a, b = random.sample(produits, 2)
         if a[0] == b[0]:
             continue
@@ -284,7 +450,7 @@ def gen_assembler(produits):
         if key in used:
             continue
         used.add(key)
-        rows.append((a[0], b[0], random.randint(1, 6)))
+        rows.append((a[0], b[0], random.randint(1, 10)))  # Quantités plus variées
     return rows
 
 def gen_calendriers():
@@ -305,76 +471,132 @@ def gen_avoir_type(usines, typeu):
 
 def gen_diriger(employes, departements):
     rows = []
-    for _ in range(500):
+    for _ in range(2000):  # 4x plus de données
         e = random.choice(employes)[0]
         d = random.choice(departements)[0]
         date = random.choice(cal2_dates)
         rows.append((e, d, date))
     # unique par PK (CODEE, CODED, DATEDEBUTDIR) => dédoublonne
     rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:500]
+    return rows[:2000]
 
 def gen_autoriser(qualifs, departements):
     rows = []
-    for d in random.sample(departements, k=min(500, len(departements))):
-        for q in random.sample(qualifs, k=random.randint(2, 5)):
+    for d in random.sample(departements, k=min(2000, len(departements))):
+        for q in random.sample(qualifs, k=random.randint(3, 8)):  # Plus d'autorisations par département
             rows.append((q[0], d[0]))
-    return rows[:500]
+    return rows[:2000]
 
 def gen_fabriquer(usines, produits):
+    """Génère des fabrications réalistes selon les types d'usines"""
     rows = []
     used = set()
     # 70% des fabrications hors HG pour servir la requête 5 (vendus en HG mais fabriqués ailleurs)
     ext_usines = [u for u in usines if not str(u[3]).startswith("31")]
     loc_usines = [u for u in usines if str(u[3]).startswith("31")]
 
-    attempts = 0
-    max_attempts = 2000  # Limite pour éviter une boucle infinie
+    # Obtient les types d'usines pour faire des associations réalistes
+    typeu_data = gen_typeu()
+    avoir_type_data = gen_avoir_type(usines, typeu_data)
 
-    while len(rows) < 500 and attempts < max_attempts:
+    # Crée un mapping usine -> types
+    usine_types = {}
+    for codeu, codetu in avoir_type_data:
+        if codeu not in usine_types:
+            usine_types[codeu] = []
+        type_nom = typeu_data[codetu-1][1]  # Récupère le nom du type
+        usine_types[codeu].append(type_nom)
+
+    attempts = 0
+    max_attempts = 8000  # Plus d'essais pour plus de données
+    target_records = 2000  # 4x plus de données (500 -> 2000)
+
+    while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
+
+        # Choix de l'usine
         if ext_usines and random.random() < 0.7:
             u = random.choice(ext_usines)
         else:
             u = random.choice(loc_usines or usines)
-        p = random.choice(produits)
+
+        # Vérifie que l'usine a des types associés
+        if u[0] not in usine_types:
+            continue
+
+        # Choix d'un produit compatible avec les types de l'usine
+        produit_compatible = None
+        for _ in range(50):  # Essais pour trouver un produit compatible
+            p = random.choice(produits)
+            # Vérifie si le produit peut être fabriqué par cette usine
+            if est_produit_compatible_usine(p, usine_types[u[0]]):
+                produit_compatible = p
+                break
+
+        if not produit_compatible:
+            # Si aucun produit compatible, prend un produit au hasard (cas d'exception)
+            produit_compatible = random.choice(produits)
+
         d = random.choice(cal1_dates)
 
         # Vérifie l'unicité de la combinaison (CODEU, CODEP, DATEFAB)
-        key = (u[0], p[0], d)
+        key = (u[0], produit_compatible[0], d)
         if key not in used:
             used.add(key)
-            q = random.randint(5, 300)
-            rows.append((u[0], p[0], d, q))
+            q = random.randint(10, 500)  # Quantités plus importantes
+            rows.append((u[0], produit_compatible[0], d, q))
 
     return rows
 
+def est_produit_compatible_usine(produit, types_usine):
+    """Vérifie si un produit peut être fabriqué par les types d'usine donnés"""
+    # Récupère le code de gamme du produit
+    codeg = produit[3]
+
+    # Trouve le nom de la gamme
+    gamme_nom = None
+    for i, g_nom in enumerate(GAMMES, start=1):
+        if f"G{str(i).zfill(2)}" == codeg:
+            gamme_nom = g_nom
+            break
+
+    if not gamme_nom:
+        return True  # Si gamme inconnue, accepte par défaut
+
+    # Vérifie si au moins un type d'usine peut fabriquer cette gamme
+    for type_usine in types_usine:
+        if type_usine in PRODUITS_PAR_TYPE and gamme_nom in PRODUITS_PAR_TYPE[type_usine]:
+            return True
+
+    return False
+
 def gen_responsable(employes, gammes):
     rows = []
-    years = random.sample(cal4, k=5)
-    for _ in range(500):
+    years = random.sample(cal4, k=10)  # Plus d'années
+    for _ in range(2000):  # 4x plus de données
         e = random.choice(employes)[0]
         g = random.choice(gammes)[0]
         y = random.choice(years)
         rows.append((e, g, y))
     rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:500]
+    return rows[:2000]
 
 def gen_payer2(gammes):
     rows = []
-    years = random.sample(cal4, k=5)
+    years = random.sample(cal4, k=10)  # Plus d'années
     for g in gammes:
         for y in years:
-            rows.append((g[0], y, round(random.uniform(0.05, 0.25), 2)))
-    return rows[:500]
+            rows.append((g[0], y, round(random.uniform(0.03, 0.30), 2)))  # Plus de variabilité
+    return rows[:2000]
 
 def gen_facturer(produits):
     rows = []
     for p in produits:
-        for (m, y) in random.sample(cal3, k= random.randint(2, 6)):
-            pu = round(random.uniform(4.0, 1500.0), 2)
+        # Plus de mois-années par produit pour 4x plus de données
+        for (m, y) in random.sample(cal3, k=random.randint(4, 12)):
+            pu = round(random.uniform(2.0, 2500.0), 2)  # Plus de variabilité de prix
             rows.append((p[0], m, y, pu))
-    return rows[:500]
+    return rows[:2000]
 
 def gen_vendre(employes, pvs, produits):
     rows = []
@@ -388,9 +610,10 @@ def gen_vendre(employes, pvs, produits):
             break
 
     attempts = 0
-    max_attempts = 5000  # Limite pour éviter une boucle infinie
+    max_attempts = 20000  # Plus d'essais pour 4x plus de données
+    target_records = 2000  # 4x plus de données
 
-    while len(rows) < 500 and attempts < max_attempts:
+    while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
         e = random.choice(employes)[0]
         pv = random.choice(pvs)
@@ -404,28 +627,29 @@ def gen_vendre(employes, pvs, produits):
         key = (e, pv[0], p[0], m, y)
         if key not in used:
             used.add(key)
-            q = random.randint(1, 50)
+            q = random.randint(1, 100)  # Quantités plus importantes
             rows.append((e, pv[0], p[0], m, y, q))
 
     return rows
 
 def gen_payer1(employes):
     rows = []
-    years = random.sample(cal4, k=5)
+    years = random.sample(cal4, k=10)  # Plus d'années
     for e in employes:
         for y in years:
-            fixe = round(random.uniform(1300, 4200), 2)
-            idx = random.randint(1, 10)
+            fixe = round(random.uniform(1200, 5000), 2)  # Plus de variabilité salariale
+            idx = random.randint(1, 15)  # Indices plus variés
             rows.append((e[0], y, fixe, idx))
-    return rows[:500]
+    return rows[:2000]
 
 def gen_travailler_usine(employes, departements):
     rows = []
     used = set()
     attempts = 0
-    max_attempts = 2000
+    max_attempts = 8000  # Plus d'essais
+    target_records = 2000  # 4x plus de données
 
-    while len(rows) < 500 and attempts < max_attempts:
+    while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
         e = random.choice(employes)[0]
         d = random.choice(departements)[0]
@@ -435,7 +659,7 @@ def gen_travailler_usine(employes, departements):
         key = (e, d, m, y)
         if key not in used:
             used.add(key)
-            hrs = round(random.uniform(10, 180), 2)
+            hrs = round(random.uniform(5, 200), 2)  # Plus de variabilité d'heures
             rows.append((e, d, m, y, hrs))
 
     return rows
@@ -444,9 +668,10 @@ def gen_travailler_pv(employes, pvs):
     rows = []
     used = set()
     attempts = 0
-    max_attempts = 2000
+    max_attempts = 8000  # Plus d'essais
+    target_records = 2000  # 4x plus de données
 
-    while len(rows) < 500 and attempts < max_attempts:
+    while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
         e = random.choice(employes)[0]
         pv = random.choice(pvs)[0]
@@ -456,7 +681,7 @@ def gen_travailler_pv(employes, pvs):
         key = (e, pv, m, y)
         if key not in used:
             used.add(key)
-            hrs = round(random.uniform(5, 160), 2)
+            hrs = round(random.uniform(3, 180), 2)  # Plus de variabilité d'heures
             rows.append((e, pv, m, y, hrs))
 
     return rows
