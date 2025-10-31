@@ -102,17 +102,17 @@ def street():
 # -----------------------
 # ÉNUMÉRATIONS (Sujet)
 # -----------------------
-# TYPEU (NomTU) : chaine assemblage, scierie, métallurgie, fonderie (enum)  :contentReference[oaicite:1]{index=1}
-TYPEU = ["assemblage", "scierie", "métallurgie", "fonderie"]
+# TYPEU (NomTU) : chaine assemblage, scierie, métallurgie, fonderie (enum)
+# Correspond exactement à la contrainte CHK_TYPEU_NOMTU_ENUM
+TYPEU = ["chaine assemblage", "scierie", "métallurgie", "fonderie"]
 
-# GAMME (Code GXX et libellé)  :contentReference[oaicite:2]{index=2}
+# GAMME (Code GXX et libellé) - Doit correspondre exactement à l'enum de la DB
 GAMMES = [
     "jardin et piscine", "mobilier intérieur", "plomberie et chauffage", "salle de bain et WC",
-    "luminaire", "électricité et domotique", "quincaillerie", "cuisine",
-    "peinture et droguerie", "carrelage et parquet", "matériaux de construction", "outillage"
+    "luminaire, électricité et domotique", "quincaillerie", "cuisine",
+    "peinture et droguerie", "carrelage et parquet", "matériaux de construction"
 ]
-# NB: le sujet liste 11 libellés, on complète avec "outillage" pour arriver à 12 codes G01..G12.
-# Le format de code attendu est GXX (ex: G01)  :contentReference[oaicite:3]{index=3}
+# NB: 10 gammes correspondant exactement à l'enum de la contrainte CHK_GAMME_NOMG_ENUM
 
 # DEPARTEMENTS (NomD) : fabrication, assemblage, RH, expédition, logistique, direction, finance  :contentReference[oaicite:4]{index=4}
 DEPTS = ["fabrication", "assemblage", "RH", "expédition", "logistique", "direction", "finance"]
@@ -198,8 +198,9 @@ def gen_employes(n=N_EMP):
             ])
         vpers, cppers = pick_city(True)
         vpro, cppro = pick_city(True)
+        # Ne pas inclure CODEE car c'est GENERATED ALWAYS AS IDENTITY
         rows.append((
-            code, nom, prenom,
+            nom, prenom,
             street(), cppers, vpers,
             street(), cppro, vpro,
             phone(hg=True), phone(hg=True)
@@ -224,10 +225,9 @@ def gen_qualifs(n=N_QUALIF):
                 "Plombier", "Carreleur", "Peintre", "Soudeur", "Monteur", "Chargé logistique"
             ]) + f" {random.randint(1,9)}"
         taux = round(random.uniform(11.5, 28.0), 2)  # €/h
-        rows.append((code, nom, taux, None))
-    # Crée quelques liens de "complétée par" (réflexive 0,n <> 0,1)
-    for i in range(2, min(n, 15)):
-        rows[i-1] = (rows[i-1][0], rows[i-1][1], rows[i-1][2], random.randint(1, i-1))
+        # Ne pas inclure CODEQ car c'est GENERATED ALWAYS AS IDENTITY
+        rows.append((nom, taux, None))
+    # Note: On ne peut plus créer les liens "complétée par" facilement sans connaître les IDs générés
     return rows
 
 def gen_usines(n=N_USINES):
@@ -246,13 +246,15 @@ def gen_usines(n=N_USINES):
         else:
             nom_usine = f"Usine {city} {code}"
 
-        rows.append((code, nom_usine, street(), cp, city, phone(hg=cp.startswith("31"))))
+        # Ne pas inclure CODEU car c'est GENERATED ALWAYS AS IDENTITY
+        rows.append((nom_usine, street(), cp, city, phone(hg=cp.startswith("31"))))
     return rows
 
 def gen_typeu():
     rows = []
     for i, nom in enumerate(TYPEU, start=1):
-        rows.append((i, nom))
+        # Ne pas inclure CODETU car c'est GENERATED ALWAYS AS IDENTITY
+        rows.append((nom,))
     return rows
 
 def gen_gammes():
@@ -273,21 +275,34 @@ def gen_departements(usines):
             code += 1
     return rows
 
+def gen_departements_with_ids(usines_with_ids):
+    """Génère des départements en utilisant les vrais IDs d'usines"""
+    rows = []
+    for u_id, u_nom in usines_with_ids:
+        nb = random.randint(3, 6)  # plusieurs départements par usine
+        noms = random.sample(DEPTS, k=nb)
+        for nom in noms:
+            rows.append((nom, u_id))
+    return rows
+
 def gen_points_vente(n=N_PV):
     rows = []
     for code in range(1, n+1):
         city, cp = pick_city(True)
-        rows.append((code,
-                     f"Brico {city} {code}",
-                     street(), cp, city, phone(hg=cp.startswith("31")),
-                     random.choices(PV_TYPES, weights=[0.6, 0.4])[0]))  # un peu plus de GSB
+        # NOMPV doit être dans ('GSB','Brico-Express') selon la contrainte de la DB
+        nompv = random.choices(PV_TYPES, weights=[0.6, 0.4])[0]  # un peu plus de GSB
+        # Ne pas inclure CODEPV car c'est GENERATED ALWAYS AS IDENTITY
+        rows.append((
+            nompv,  # NOMPV respecte maintenant la contrainte
+            street(), cp, city, phone(hg=cp.startswith("31")),
+            f"Type {nompv}"))  # TYPEPV comme description
     return rows
 
 # -----------------------
 # PRODUITS PAR TYPE D'USINE (pour réalisme)
 # -----------------------
 PRODUITS_PAR_TYPE = {
-    "assemblage": {
+    "chaine assemblage": {
         "jardin et piscine": [
             "Tondeuse électrique", "Tondeuse thermique", "Coupe-bordures", "Taille-haie",
             "Souffleur", "Scarificateur", "Bineuse", "Pompe piscine", "Filtre piscine",
@@ -299,13 +314,13 @@ PRODUITS_PAR_TYPE = {
             "Matelas", "Sommier", "Table de chevet", "Bureau", "Étagères",
             "Fursuit tête", "Fursuit paws", "Fursuit queue", "Costume mascotte OwO"
         ],
-        "outillage": [
+        "matériaux de construction": [
             "Perceuse visseuse", "Perceuse à percussion", "Visseuse impact",
             "Scie circulaire", "Scie sauteuse", "Ponceuse orbitale", "Ponceuse excentrique",
             "Défonceuse", "Raboteuse", "Meuleuse", "Perforateur", "Marteau piqueur",
             "Bilboquet artisanal", "Bilboquet pro", "Kit bilboquet UwU"
         ],
-        "électricité et domotique": [
+        "luminaire, électricité et domotique": [
             "Tableau électrique", "Disjoncteur", "Interrupteur différentiel",
             "Box domotique", "Prise connectée", "Interrupteur connecté",
             "Détecteur mouvement", "Caméra surveillance", "Portier vidéo"
@@ -344,11 +359,11 @@ PRODUITS_PAR_TYPE = {
             "Radiateur acier", "Radiateur fonte", "Collecteur chauffage",
             "Vanne d'arrêt", "Clapet anti-retour", "Détendeur gaz"
         ],
-        "électricité et domotique": [
+        "luminaire, électricité et domotique": [
             "Gaine électrique", "Tube IRL", "Chemin câbles", "Goulottes",
             "Boîtier étanche", "Armoire électrique", "Rail DIN", "Borne connexion"
         ],
-        "outillage": [
+        "matériaux de construction": [
             "Clé plate", "Clé à pipe", "Tournevis", "Pince", "Serre-joint",
             "Étau", "Lime", "Râpe", "Burins", "Pointeau", "Compas"
         ]
@@ -364,7 +379,7 @@ PRODUITS_PAR_TYPE = {
             "Flexible douche", "Barre douche", "Support douchette",
             "Évacuation douche", "Bonde baignoire", "Trop-plein"
         ],
-        "luminaire": [
+        "luminaire, électricité et domotique": [
             "Applique murale", "Suspension", "Lustre", "Spot encastrable",
             "Réglette LED", "Plafonnier", "Lampadaire", "Lampe bureau",
             "Projecteur LED", "Borne éclairage", "Balise LED"
@@ -417,16 +432,16 @@ def gen_produits(n=N_PRODUITS):
                     modele = random.randint(100, 999)
                     nom_final = f"{produit_base} {modele}"
 
-                    rows.append((code, nom_final, marque, codeg))
+                    # Ne pas inclure CODEP car c'est GENERATED ALWAYS AS IDENTITY
+                    rows.append((nom_final, marque, codeg))
                     code += 1
 
     # Complete avec des produits génériques si nécessaire
     while len(rows) < n:
         nom = f"Produit générique {random.randint(1000, 9999)}"
         marque = random.choice(["Generic", "Standard", "Basic"])
-        codeg = f"G{random.randint(1, len(GAMMES)):02d}"
-        rows.append((code, nom, marque, codeg))
-        code += 1
+        codeg = f"G{random.randint(1, len(GAMMES)):02d}"  # Ajusté pour 10 gammes
+        rows.append((nom, marque, codeg))
 
     return rows[:n]
 
@@ -586,16 +601,17 @@ def gen_responsable(employes, gammes):
 
 def gen_payer2(gammes):
     rows = []
-    # S'assurer que 2024 et 2025 sont inclus + autres années aléatoires
-    mandatory_years = [2024, 2025]
-    other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
-    years = mandatory_years + other_years
+    # Couvrir TOUTES les années 1985-2025 avec 2-10 enregistrements par année
+    all_years = list(range(1985, 2026))  # Toutes les années de 1985 à 2025
 
-    # Un seul enregistrement par gamme/année (contrainte d'unicité)
-    for g in gammes:
-        for y in years:
-            indice = round(random.uniform(0.03, 0.30), 2)
-            rows.append((g[0], y, indice))
+    for year in all_years:
+        # 2-10 enregistrements par année (gammes aléatoires)
+        num_records = random.randint(2, 10)
+        selected_gammes = random.sample(gammes, k=min(num_records, len(gammes)))
+
+        for g in selected_gammes:
+            indice = round(random.uniform(0.01, 0.99), 2)  # Entre 0 et 1 exclus selon contrainte
+            rows.append((g[0], year, indice))
 
     return rows
 
@@ -628,8 +644,8 @@ def gen_vendre(employes, pvs, produits):
         e = random.choice(employes)[0]
         pv = random.choice(pvs)
         p = random.choice(produits)
-        # règle pour Brico-Express & quincaillerie
-        if pv[-1] == "Brico-Express" and p[3] == quinca_code:
+        # règle pour Brico-Express & quincaillerie - pv[1] est maintenant NOMPV
+        if pv[1] == "Brico-Express" and p[3] == quinca_code:
             continue
         (m, y) = random.choice(cal3)
 
@@ -700,6 +716,167 @@ def gen_travailler_pv(employes, pvs):
     return rows
 
 # -----------------------
+# FONCTIONS AVEC IDS GÉNÉRÉS AUTOMATIQUEMENT
+# -----------------------
+
+def gen_posseder_with_ids(employes_ids, qualifs_ids):
+    rows = []
+    for e_id in employes_ids:
+        qset = random.sample(qualifs_ids, k=random.randint(2, 5))
+        for q_id in qset:
+            rows.append((e_id, q_id))
+    return rows[:max(2000, len(rows))]
+
+def gen_assembler_with_ids(produits_ids):
+    rows = []
+    used = set()
+    for _ in range(2000):
+        a, b = random.sample(produits_ids, 2)
+        if a == b:
+            continue
+        key = (a, b)
+        if key in used:
+            continue
+        used.add(key)
+        rows.append((a, b, random.randint(1, 10)))
+    return rows
+
+def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids):
+    rows = []
+    for u_id, u_nom in usines_with_ids:
+        for t_id, t_nom in random.sample(typeu_with_ids, k=random.randint(1, min(2, len(typeu_with_ids)))):
+            rows.append((u_id, t_id))
+    return rows
+
+def gen_diriger_with_ids(employes_ids, departements_ids):
+    rows = []
+    for _ in range(2000):
+        e = random.choice(employes_ids)
+        d = random.choice(departements_ids)
+        date = random.choice(cal2_dates)
+        rows.append((e, d, date))
+    rows = list({(a, b, c) for (a, b, c) in rows})
+    return rows[:2000]
+
+def gen_autoriser_with_ids(qualifs_ids, departements_ids):
+    rows = []
+    for d in random.sample(departements_ids, k=min(2000, len(departements_ids))):
+        for q in random.sample(qualifs_ids, k=random.randint(3, 8)):
+            rows.append((q, d))
+    return rows[:2000]
+
+def gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids):
+    """Génère des fabrications réalistes avec les vrais IDs"""
+    rows = []
+    used = set()
+    attempts = 0
+    max_attempts = 8000
+    target_records = 2000
+
+    while len(rows) < target_records and attempts < max_attempts:
+        attempts += 1
+        u_id = random.choice([u[0] for u in usines_with_ids])
+        p_id = random.choice(produits_ids)
+        d = random.choice(cal1_dates)
+        key = (u_id, p_id, d)
+        if key not in used:
+            used.add(key)
+            q = random.randint(10, 500)
+            rows.append((u_id, p_id, d, q))
+    return rows
+
+def gen_responsable_with_ids(employes_ids, gammes):
+    rows = []
+    mandatory_years = [2024, 2025]
+    other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
+    years = mandatory_years + other_years
+    for _ in range(2000):
+        e = random.choice(employes_ids)
+        g = random.choice(gammes)[0]
+        y = random.choice(years)
+        rows.append((e, g, y))
+    rows = list({(a, b, c) for (a, b, c) in rows})
+    return rows[:2000]
+
+def gen_facturer_with_ids(produits_ids):
+    rows = []
+    for p_id in produits_ids:
+        for (m, y) in random.sample(cal3, k=random.randint(4, 12)):
+            pu = round(random.uniform(2.0, 2500.0), 2)
+            rows.append((p_id, m, y, pu))
+    return rows[:2000]
+
+def gen_vendre_with_ids(employes_ids, pvs_ids, produits_ids):
+    rows = []
+    used = set()
+    attempts = 0
+    max_attempts = 20000
+    target_records = 2000
+
+    while len(rows) < target_records and attempts < max_attempts:
+        attempts += 1
+        e = random.choice(employes_ids)
+        pv = random.choice(pvs_ids)
+        p = random.choice(produits_ids)
+        (m, y) = random.choice(cal3)
+        key = (e, pv, p, m, y)
+        if key not in used:
+            used.add(key)
+            q = random.randint(1, 100)
+            rows.append((e, pv, p, m, y, q))
+    return rows
+
+def gen_payer1_with_ids(employes_ids):
+    rows = []
+    mandatory_years = [2024, 2025]
+    other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
+    years = mandatory_years + other_years
+    for e_id in employes_ids:
+        for y in years:
+            fixe = round(random.uniform(1200, 5000), 2)
+            idx = random.randint(1, 15)
+            rows.append((e_id, y, fixe, idx))
+    return rows[:4000]
+
+def gen_travailler_usine_with_ids(employes_ids, departements_ids):
+    rows = []
+    used = set()
+    attempts = 0
+    max_attempts = 8000
+    target_records = 2000
+
+    while len(rows) < target_records and attempts < max_attempts:
+        attempts += 1
+        e = random.choice(employes_ids)
+        d = random.choice(departements_ids)
+        (m, y) = random.choice(cal3)
+        key = (e, d, m, y)
+        if key not in used:
+            used.add(key)
+            hrs = round(random.uniform(5, 200), 2)
+            rows.append((e, d, m, y, hrs))
+    return rows
+
+def gen_travailler_pv_with_ids(employes_ids, pvs_ids):
+    rows = []
+    used = set()
+    attempts = 0
+    max_attempts = 8000
+    target_records = 2000
+
+    while len(rows) < target_records and attempts < max_attempts:
+        attempts += 1
+        e = random.choice(employes_ids)
+        pv = random.choice(pvs_ids)
+        (m, y) = random.choice(cal3)
+        key = (e, pv, m, y)
+        if key not in used:
+            used.add(key)
+            hrs = round(random.uniform(3, 180), 2)
+            rows.append((e, pv, m, y, hrs))
+    return rows
+
+# -----------------------
 # NETTOYAGE DES DONNÉES
 # -----------------------
 def clear_all_data(cursor):
@@ -757,7 +934,10 @@ def main():
 
         # Parents
         typeu = gen_typeu()
-        cur.executemany("INSERT INTO TYPEU(CODETU, NOMTU) VALUES (:1,:2)", typeu)
+        cur.executemany("INSERT INTO TYPEU(NOMTU) VALUES (:1)", typeu)
+        # Récupération des IDs générés pour TYPEU
+        cur.execute("SELECT CODETU, NOMTU FROM TYPEU ORDER BY CODETU")
+        typeu_with_ids = cur.fetchall()
 
         gammes = gen_gammes()
         cur.executemany("INSERT INTO GAMME(CODEG, NOMG) VALUES (:1,:2)", gammes)
@@ -769,55 +949,73 @@ def main():
         cur.executemany("INSERT INTO CALENDRIER4(ANNEE) VALUES (:1)", cal4_rows)
 
         usines = gen_usines()
-        cur.executemany("""INSERT INTO USINES(CODEU,NOMU,RUEU,CPOSTALU,VILLEU,TELU)
-                           VALUES (:1,:2,:3,:4,:5,:6)""", usines)
+        cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
+                           VALUES (:1,:2,:3,:4,:5)""", usines)
+        # Récupération des IDs générés pour USINES
+        cur.execute("SELECT CODEU, NOMU FROM USINES ORDER BY CODEU")
+        usines_with_ids = cur.fetchall()
 
         employes = gen_employes()
         cur.executemany("""INSERT INTO EMPLOYES
-                           (CODEE,NOME,PRENOME,RUEPERSE,CPOSTALPERSE,VILLEPERSE,
+                           (NOME,PRENOME,RUEPERSE,CPOSTALPERSE,VILLEPERSE,
                             RUEPROE,CPOSTALPROE,VILLEPROE,TELPERSE,TELPROE)
-                           VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11)""", employes)
+                           VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10)""", employes)
+        # Récupération des IDs générés pour EMPLOYES
+        cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
+        employes_ids = [row[0] for row in cur.fetchall()]
 
         qualifs = gen_qualifs()
         cur.executemany("""INSERT INTO QUALIFICATIONS
-                           (CODEQ,NOMQ,TAUXMINQ,CODEQ_EST_COMPLETEE)
-                           VALUES (:1,:2,:3,:4)""", qualifs)
+                           (NOMQ,TAUXMINQ,CODEQ_EST_COMPLETEE)
+                           VALUES (:1,:2,:3)""", qualifs)
+        # Récupération des IDs générés pour QUALIFICATIONS
+        cur.execute("SELECT CODEQ FROM QUALIFICATIONS ORDER BY CODEQ")
+        qualifs_ids = [row[0] for row in cur.fetchall()]
 
-        # Dépendants
-        departements = gen_departements(usines)
-        cur.executemany("""INSERT INTO DEPARTEMENTS(CODED,NOMD,CODEU) VALUES (:1,:2,:3)""", departements)
+        # Dépendants - utilisation des IDs récupérés
+        departements = gen_departements_with_ids(usines_with_ids)
+        cur.executemany("""INSERT INTO DEPARTEMENTS(NOMD,CODEU) VALUES (:1,:2)""", departements)
+        # Récupération des IDs générés pour DEPARTEMENTS
+        cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
+        departements_ids = [row[0] for row in cur.fetchall()]
 
         pvs = gen_points_vente()
         cur.executemany("""INSERT INTO POINTS_DE_VENTE
-                           (CODEPV,NOMPV,RUEPV,CPOSTALPV,VILLEPV,TELPV,TYPEPV)
-                           VALUES (:1,:2,:3,:4,:5,:6,:7)""", pvs)
+                           (NOMPV,RUEPV,CPOSTALPV,VILLEPV,TELPV,TYPEPV)
+                           VALUES (:1,:2,:3,:4,:5,:6)""", pvs)
+        # Récupération des IDs générés pour POINTS_DE_VENTE
+        cur.execute("SELECT CODEPV FROM POINTS_DE_VENTE ORDER BY CODEPV")
+        pvs_ids = [row[0] for row in cur.fetchall()]
 
         produits = gen_produits()
-        cur.executemany("""INSERT INTO PRODUITS(CODEP,NOMP,MARQUEP,CODEG) VALUES (:1,:2,:3,:4)""", produits)
+        cur.executemany("""INSERT INTO PRODUITS(NOMP,MARQUEP,CODEG) VALUES (:1,:2,:3)""", produits)
+        # Récupération des IDs générés pour PRODUITS
+        cur.execute("SELECT CODEP FROM PRODUITS ORDER BY CODEP")
+        produits_ids = [row[0] for row in cur.fetchall()]
 
-        # Associations / faits
-        posseder = gen_posseder(employes, qualifs)
+        # Associations / faits - utilisation des IDs récupérés
+        posseder = gen_posseder_with_ids(employes_ids, qualifs_ids)
         cur.executemany("INSERT INTO POSSEDER(CODEE,CODEQ) VALUES (:1,:2)", posseder)
 
-        assembler = gen_assembler(produits)
+        assembler = gen_assembler_with_ids(produits_ids)
         cur.executemany("""INSERT INTO ASSEMBLER(CODEP_EST_COMPOSE,CODEP_COMPOSE,QTE_ASSEMBL)
                            VALUES (:1,:2,:3)""", assembler)
 
-        avoir_type = gen_avoir_type(usines, typeu)
+        avoir_type = gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids)
         cur.executemany("INSERT INTO AVOIR_TYPE(CODEU,CODETU) VALUES (:1,:2)", avoir_type)
 
-        diriger = gen_diriger(employes, departements)
+        diriger = gen_diriger_with_ids(employes_ids, departements_ids)
         cur.executemany("""INSERT INTO DIRIGER(CODEE,CODED,DATEDEBUTDIR)
                            VALUES (:1,:2,:3)""", diriger)
 
-        autoriser = gen_autoriser(qualifs, departements)
+        autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
         cur.executemany("INSERT INTO AUTORISER(CODEQ,CODED) VALUES (:1,:2)", autoriser)
 
-        fabriquer = gen_fabriquer(usines, produits)
+        fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids)
         cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)
                            VALUES (:1,:2,:3,:4)""", fabriquer)
 
-        responsable = gen_responsable(employes, gammes)
+        responsable = gen_responsable_with_ids(employes_ids, gammes)
         cur.executemany("""INSERT INTO RESPONSABLE(CODEE,CODEG,ANNEE)
                            VALUES (:1,:2,:3)""", responsable)
 
@@ -825,23 +1023,23 @@ def main():
         cur.executemany("""INSERT INTO PAYER2(CODEG,ANNEE,INDICERETROCESSIONG)
                            VALUES (:1,:2,:3)""", payer2)
 
-        facturer = gen_facturer(produits)
+        facturer = gen_facturer_with_ids(produits_ids)
         cur.executemany("""INSERT INTO FACTURER(CODEP,MOIS,ANNEE,PRIXUNITP)
                            VALUES (:1,:2,:3,:4)""", facturer)
 
-        vendre = gen_vendre(employes, pvs, produits)
+        vendre = gen_vendre_with_ids(employes_ids, pvs_ids, produits_ids)
         cur.executemany("""INSERT INTO VENDRE(CODEE,CODEPV,CODEP,MOIS,ANNEE,QTE_VENDUE)
                            VALUES (:1,:2,:3,:4,:5,:6)""", vendre)
 
-        payer1 = gen_payer1(employes)
+        payer1 = gen_payer1_with_ids(employes_ids)
         cur.executemany("""INSERT INTO PAYER1(CODEE,ANNEE,FIXEMENSUELE,INDICESALE)
                            VALUES (:1,:2,:3,:4)""", payer1)
 
-        trav_u = gen_travailler_usine(employes, departements)
+        trav_u = gen_travailler_usine_with_ids(employes_ids, departements_ids)
         cur.executemany("""INSERT INTO TRAVAILLER_USINE(CODEE,CODED,MOIS,ANNEE,NBHEURES_U)
                            VALUES (:1,:2,:3,:4,:5)""", trav_u)
 
-        trav_pv = gen_travailler_pv(employes, pvs)
+        trav_pv = gen_travailler_pv_with_ids(employes_ids, pvs_ids)
         cur.executemany("""INSERT INTO TRAVAILLER_PT_VENTE(CODEE,CODEPV,MOIS,ANNEE,NBHEURES_PV)
                            VALUES (:1,:2,:3,:4,:5)""", trav_pv)
 
