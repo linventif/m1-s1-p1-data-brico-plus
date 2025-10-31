@@ -572,7 +572,10 @@ def est_produit_compatible_usine(produit, types_usine):
 
 def gen_responsable(employes, gammes):
     rows = []
-    years = random.sample(cal4, k=10)  # Plus d'années
+    # S'assurer que 2024 et 2025 sont inclus + autres années aléatoires
+    mandatory_years = [2024, 2025]
+    other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
+    years = mandatory_years + other_years
     for _ in range(2000):  # 4x plus de données
         e = random.choice(employes)[0]
         g = random.choice(gammes)[0]
@@ -583,11 +586,18 @@ def gen_responsable(employes, gammes):
 
 def gen_payer2(gammes):
     rows = []
-    years = random.sample(cal4, k=10)  # Plus d'années
+    # S'assurer que 2024 et 2025 sont inclus + autres années aléatoires
+    mandatory_years = [2024, 2025]
+    other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
+    years = mandatory_years + other_years
+
+    # Un seul enregistrement par gamme/année (contrainte d'unicité)
     for g in gammes:
         for y in years:
-            rows.append((g[0], y, round(random.uniform(0.03, 0.30), 2)))  # Plus de variabilité
-    return rows[:2000]
+            indice = round(random.uniform(0.03, 0.30), 2)
+            rows.append((g[0], y, indice))
+
+    return rows
 
 def gen_facturer(produits):
     rows = []
@@ -634,13 +644,16 @@ def gen_vendre(employes, pvs, produits):
 
 def gen_payer1(employes):
     rows = []
-    years = random.sample(cal4, k=10)  # Plus d'années
+    # S'assurer que 2024 et 2025 sont inclus + autres années aléatoires
+    mandatory_years = [2024, 2025]
+    other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
+    years = mandatory_years + other_years
     for e in employes:
         for y in years:
             fixe = round(random.uniform(1200, 5000), 2)  # Plus de variabilité salariale
             idx = random.randint(1, 15)  # Indices plus variés
             rows.append((e[0], y, fixe, idx))
-    return rows[:2000]
+    return rows[:4000]  # Augmenté pour avoir plus de données
 
 def gen_travailler_usine(employes, departements):
     rows = []
