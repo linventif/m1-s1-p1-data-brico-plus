@@ -121,37 +121,37 @@ DEPTS = ["fabrication", "assemblage", "RH", "expédition", "logistique", "direct
 PV_TYPES = ["GSB", "Brico-Express"]
 
 # -----------------------
-# VOLUMÉTRIE VISÉE (4x augmentation)
+# VOLUMÉTRIE VISÉE (données réduites mais beaucoup d'associations)
 # -----------------------
-N_EMP = 200  # 50 -> 200
-N_QUALIF = 200  # 50 -> 200
-N_USINES = 60  # 15 -> 60
-N_PV = 200  # 50 -> 200
-N_PRODUITS = 400  # 50 -> 400 (beaucoup plus de produits)
+N_EMP = 50  # 50 employés
+N_QUALIF = 50  # 50 qualifications
+N_USINES = 15  # 15 usines
+N_PV = 50  # 50 points de vente
+N_PRODUITS = 100  # 100 produits
 
-# Calendriers (~200 lignes, 4x augmentation)
-N_CAL1 = 200  # DATEFAB
-N_CAL2 = 200  # DATEDEBUTDIR
+# Calendriers (~50 lignes)
+N_CAL1 = 50  # DATEFAB
+N_CAL2 = 50  # DATEDEBUTDIR
 # CAL3 = 200 couples (mois, année) <= année courante
 # CAL4 = 200 années (<= année courante)
 YEAR_NOW = dt.date.today().year
 MONTH_NOW = dt.date.today().month
 
-# Construit 200 (mois, année) en remontant depuis l'année courante
+# Construit 50 (mois, année) en remontant depuis l'année courante
 cal3 = []
 y, m = YEAR_NOW, MONTH_NOW
-for _ in range(240):  # génére assez, on tronquera à 200
+for _ in range(60):  # génére assez, on tronquera à 50
     cal3.append((m, y))
     m -= 1
     if m == 0:
         m = 12
         y -= 1
-cal3 = cal3[:200]
+cal3 = cal3[:50]
 
 # 200 années : 1985 .. 2025 (plage réaliste pour l'entreprise)
 cal4 = list(range(1985, 2026))  # 1985 à 2025 inclus
 
-# 200 dates <= aujourd'hui pour CAL1 & CAL2
+# 50 dates <= aujourd'hui pour CAL1 & CAL2
 def sample_dates(n):
     base = dt.date(YEAR_NOW-1, 1, 1)
     last = dt.date.today()
@@ -448,16 +448,16 @@ def gen_produits(n=N_PRODUITS):
 def gen_posseder(employes, qualifs):
     rows = []
     for e in employes:
-        qset = random.sample(qualifs, k=random.randint(2, 5))  # Plus de qualifications par employé
+        qset = random.sample(qualifs, k=random.randint(2, 5))  # Beaucoup de qualifications par employé
         for q in qset:
             rows.append((e[0], q[0]))
-    # 2000 lignes (4x plus)
-    return rows[:max(2000, len(rows))]
+    # Garder beaucoup d'associations
+    return rows[:max(500, len(rows))]
 
 def gen_assembler(produits):
     rows = []
     used = set()
-    for _ in range(2000):  # 4x plus de données
+    for _ in range(500):  # Beaucoup d'assemblages
         a, b = random.sample(produits, 2)
         if a[0] == b[0]:
             continue
@@ -486,21 +486,21 @@ def gen_avoir_type(usines, typeu):
 
 def gen_diriger(employes, departements):
     rows = []
-    for _ in range(2000):  # 4x plus de données
+    for _ in range(500):  # Beaucoup d'associations
         e = random.choice(employes)[0]
         d = random.choice(departements)[0]
         date = random.choice(cal2_dates)
         rows.append((e, d, date))
     # unique par PK (CODEE, CODED, DATEDEBUTDIR) => dédoublonne
     rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:2000]
+    return rows[:500]
 
 def gen_autoriser(qualifs, departements):
     rows = []
-    for d in random.sample(departements, k=min(2000, len(departements))):
-        for q in random.sample(qualifs, k=random.randint(3, 8)):  # Plus d'autorisations par département
+    for d in random.sample(departements, k=min(500, len(departements))):
+        for q in random.sample(qualifs, k=random.randint(3, 8)):  # Beaucoup d'autorisations par département
             rows.append((q[0], d[0]))
-    return rows[:2000]
+    return rows[:500]
 
 def gen_fabriquer(usines, produits):
     """Génère des fabrications réalistes selon les types d'usines"""
@@ -523,8 +523,8 @@ def gen_fabriquer(usines, produits):
         usine_types[codeu].append(type_nom)
 
     attempts = 0
-    max_attempts = 8000  # Plus d'essais pour plus de données
-    target_records = 2000  # 4x plus de données (500 -> 2000)
+    max_attempts = 2000  # Moins d'essais
+    target_records = 500  # Beaucoup d'associations
 
     while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
@@ -591,13 +591,13 @@ def gen_responsable(employes, gammes):
     mandatory_years = [2024, 2025]
     other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
     years = mandatory_years + other_years
-    for _ in range(2000):  # 4x plus de données
+    for _ in range(500):  # Beaucoup d'associations
         e = random.choice(employes)[0]
         g = random.choice(gammes)[0]
         y = random.choice(years)
         rows.append((e, g, y))
     rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:2000]
+    return rows[:500]
 
 def gen_payer2(gammes):
     rows = []
@@ -618,11 +618,11 @@ def gen_payer2(gammes):
 def gen_facturer(produits):
     rows = []
     for p in produits:
-        # Plus de mois-années par produit pour 4x plus de données
+        # Beaucoup de facturations par produit
         for (m, y) in random.sample(cal3, k=random.randint(4, 12)):
             pu = round(random.uniform(2.0, 2500.0), 2)  # Plus de variabilité de prix
             rows.append((p[0], m, y, pu))
-    return rows[:2000]
+    return rows[:500]
 
 def gen_vendre(employes, pvs, produits):
     rows = []
@@ -636,8 +636,8 @@ def gen_vendre(employes, pvs, produits):
             break
 
     attempts = 0
-    max_attempts = 20000  # Plus d'essais pour 4x plus de données
-    target_records = 2000  # 4x plus de données
+    max_attempts = 5000  # Moins d'essais
+    target_records = 500  # Beaucoup d'associations
 
     while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
@@ -669,14 +669,14 @@ def gen_payer1(employes):
             fixe = round(random.uniform(1200, 5000), 2)  # Plus de variabilité salariale
             idx = random.randint(1, 15)  # Indices plus variés
             rows.append((e[0], y, fixe, idx))
-    return rows[:4000]  # Augmenté pour avoir plus de données
+    return rows[:1000]  # Beaucoup d'associations
 
 def gen_travailler_usine(employes, departements):
     rows = []
     used = set()
     attempts = 0
-    max_attempts = 8000  # Plus d'essais
-    target_records = 2000  # 4x plus de données
+    max_attempts = 2000  # Moins d'essais
+    target_records = 500  # Beaucoup d'associations
 
     while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
@@ -697,8 +697,8 @@ def gen_travailler_pv(employes, pvs):
     rows = []
     used = set()
     attempts = 0
-    max_attempts = 8000  # Plus d'essais
-    target_records = 2000  # 4x plus de données
+    max_attempts = 2000  # Moins d'essais
+    target_records = 500  # Beaucoup d'associations
 
     while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
@@ -725,12 +725,12 @@ def gen_posseder_with_ids(employes_ids, qualifs_ids):
         qset = random.sample(qualifs_ids, k=random.randint(2, 5))
         for q_id in qset:
             rows.append((e_id, q_id))
-    return rows[:max(2000, len(rows))]
+    return rows[:max(500, len(rows))]
 
 def gen_assembler_with_ids(produits_ids):
     rows = []
     used = set()
-    for _ in range(2000):
+    for _ in range(500):
         a, b = random.sample(produits_ids, 2)
         if a == b:
             continue
@@ -750,28 +750,28 @@ def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids):
 
 def gen_diriger_with_ids(employes_ids, departements_ids):
     rows = []
-    for _ in range(2000):
+    for _ in range(500):
         e = random.choice(employes_ids)
         d = random.choice(departements_ids)
         date = random.choice(cal2_dates)
         rows.append((e, d, date))
     rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:2000]
+    return rows[:500]
 
 def gen_autoriser_with_ids(qualifs_ids, departements_ids):
     rows = []
-    for d in random.sample(departements_ids, k=min(2000, len(departements_ids))):
+    for d in random.sample(departements_ids, k=min(500, len(departements_ids))):
         for q in random.sample(qualifs_ids, k=random.randint(3, 8)):
             rows.append((q, d))
-    return rows[:2000]
+    return rows[:500]
 
 def gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids):
     """Génère des fabrications réalistes avec les vrais IDs"""
     rows = []
     used = set()
     attempts = 0
-    max_attempts = 8000
-    target_records = 2000
+    max_attempts = 2000
+    target_records = 500
 
     while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
@@ -790,13 +790,13 @@ def gen_responsable_with_ids(employes_ids, gammes):
     mandatory_years = [2024, 2025]
     other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
     years = mandatory_years + other_years
-    for _ in range(2000):
+    for _ in range(500):
         e = random.choice(employes_ids)
         g = random.choice(gammes)[0]
         y = random.choice(years)
         rows.append((e, g, y))
     rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:2000]
+    return rows[:500]
 
 def gen_facturer_with_ids(produits_ids):
     rows = []
@@ -804,14 +804,14 @@ def gen_facturer_with_ids(produits_ids):
         for (m, y) in random.sample(cal3, k=random.randint(4, 12)):
             pu = round(random.uniform(2.0, 2500.0), 2)
             rows.append((p_id, m, y, pu))
-    return rows[:2000]
+    return rows[:500]
 
 def gen_vendre_with_ids(employes_ids, pvs_ids, produits_ids):
     rows = []
     used = set()
     attempts = 0
-    max_attempts = 20000
-    target_records = 2000
+    max_attempts = 5000
+    target_records = 500
 
     while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
@@ -836,14 +836,14 @@ def gen_payer1_with_ids(employes_ids):
             fixe = round(random.uniform(1200, 5000), 2)
             idx = random.randint(1, 15)
             rows.append((e_id, y, fixe, idx))
-    return rows[:4000]
+    return rows[:1000]
 
 def gen_travailler_usine_with_ids(employes_ids, departements_ids):
     rows = []
     used = set()
     attempts = 0
-    max_attempts = 8000
-    target_records = 2000
+    max_attempts = 2000
+    target_records = 500
 
     while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
@@ -861,8 +861,8 @@ def gen_travailler_pv_with_ids(employes_ids, pvs_ids):
     rows = []
     used = set()
     attempts = 0
-    max_attempts = 8000
-    target_records = 2000
+    max_attempts = 2000
+    target_records = 500
 
     while len(rows) < target_records and attempts < max_attempts:
         attempts += 1
