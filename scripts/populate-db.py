@@ -175,27 +175,14 @@ cal2_dates = sample_dates(N_CAL2)
 def gen_employes(n=N_EMP):
     rows = []
     for code in range(1, n+1):
-        # Quelques Easter eggs furry dans les noms OwO
-        if random.random() < 0.05:  # 5% de chance
-            nom = random.choice([
-                "Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois",
-                "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David",
-                "Wolf", "Fox", "Husky", "Pawson", "Tailworth"  # Easter eggs furry
-            ])
-            prenom = random.choice([
-                "Lucas", "Louis", "Hugo", "Arthur", "Jules", "Adam", "Léo", "Noah",
-                "Emma", "Louise", "Chloé", "Lina", "Mia", "Anna", "Zoé", "Léa",
-                "Foxy", "Luna", "Kitsune", "Akira", "Nyx"  # Easter eggs furry
-            ])
-        else:
-            nom = random.choice([
-                "Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois",
-                "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David"
-            ])
-            prenom = random.choice([
-                "Lucas", "Louis", "Hugo", "Arthur", "Jules", "Adam", "Léo", "Noah",
-                "Emma", "Louise", "Chloé", "Lina", "Mia", "Anna", "Zoé", "Léa"
-            ])
+        nom = random.choice([
+            "Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois",
+            "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David", "Foxy"
+        ])
+        prenom = random.choice([
+            "Lucas", "Louis", "Hugo", "Arthur", "Jules", "Adam", "Léo", "Noah",
+            "Emma", "Louise", "Chloé", "Lina", "Mia", "Anna", "Zoé", "Léa"
+        ])
         vpers, cppers = pick_city(True)
         vpro, cppro = pick_city(True)
         # Ne pas inclure CODEE car c'est GENERATED ALWAYS AS IDENTITY
@@ -210,20 +197,11 @@ def gen_employes(n=N_EMP):
 def gen_qualifs(n=N_QUALIF):
     rows = []
     for code in range(1, n+1):
-        # Quelques Easter eggs furry dans les qualifications
-        if random.random() < 0.03:  # 3% de chance
-            nom = random.choice([
-                "Vendeur", "Chef d'équipe", "Opérateur", "Magasinier", "Technicien",
-                "Responsable RH", "Contrôleur qualité", "Acheteur", "Comptable", "Électricien",
-                "Plombier", "Carreleur", "Peintre", "Soudeur", "Monteur", "Chargé logistique",
-                "Fursuit Designer", "Bilboquet Craftsman", "OwO Specialist"  # Easter eggs
-            ]) + f" {random.randint(1,9)}"
-        else:
-            nom = random.choice([
-                "Vendeur", "Chef d'équipe", "Opérateur", "Magasinier", "Technicien",
-                "Responsable RH", "Contrôleur qualité", "Acheteur", "Comptable", "Électricien",
-                "Plombier", "Carreleur", "Peintre", "Soudeur", "Monteur", "Chargé logistique"
-            ]) + f" {random.randint(1,9)}"
+        nom = random.choice([
+            "Vendeur", "Chef d'équipe", "Opérateur", "Magasinier", "Technicien",
+            "Responsable RH", "Contrôleur qualité", "Acheteur", "Comptable", "Électricien",
+            "Plombier", "Carreleur", "Peintre", "Soudeur", "Monteur", "Chargé logistique"
+        ]) + f" {random.randint(1,9)}"
         taux = round(random.uniform(11.5, 28.0), 2)  # €/h
         # Ne pas inclure CODEQ car c'est GENERATED ALWAYS AS IDENTITY
         rows.append((nom, taux, None))
@@ -234,17 +212,7 @@ def gen_usines(n=N_USINES):
     rows = []
     for code in range(1, n+1):
         city, cp = pick_city(True)
-        # Quelques Easter eggs furry dans les noms d'usines
-        if random.random() < 0.08:  # 8% de chance
-            nom_usine = random.choice([
-                f"Usine {city} {code}",
-                f"FluffyWorks {city}",
-                f"PawCorp Factory {city}",
-                f"OwO Manufacturing {city}",
-                f"Bilboquet & Co {city}"
-            ])
-        else:
-            nom_usine = f"Usine {city} {code}"
+        nom_usine = f"Usine {city} {code}"
 
         # Ne pas inclure CODEU car c'est GENERATED ALWAYS AS IDENTITY
         rows.append((nom_usine, street(), cp, city, phone(hg=cp.startswith("31"))))
@@ -311,14 +279,12 @@ PRODUITS_PAR_TYPE = {
         "mobilier intérieur": [
             "Canapé d'angle", "Fauteuil relax", "Table basse", "Bibliothèque",
             "Armoire penderie", "Commode", "Table à manger", "Chaises", "Lit",
-            "Matelas", "Sommier", "Table de chevet", "Bureau", "Étagères",
-            "Fursuit tête", "Fursuit paws", "Fursuit queue", "Costume mascotte OwO"
+            "Matelas", "Sommier", "Table de chevet", "Bureau", "Étagères"
         ],
         "matériaux de construction": [
             "Perceuse visseuse", "Perceuse à percussion", "Visseuse impact",
             "Scie circulaire", "Scie sauteuse", "Ponceuse orbitale", "Ponceuse excentrique",
-            "Défonceuse", "Raboteuse", "Meuleuse", "Perforateur", "Marteau piqueur",
-            "Bilboquet artisanal", "Bilboquet pro", "Kit bilboquet UwU"
+            "Défonceuse", "Raboteuse", "Meuleuse", "Perforateur", "Marteau piqueur"
         ],
         "luminaire, électricité et domotique": [
             "Tableau électrique", "Disjoncteur", "Interrupteur différentiel",
@@ -330,14 +296,12 @@ PRODUITS_PAR_TYPE = {
         "jardin et piscine": [
             "Planche pin", "Planche chêne", "Lame terrasse", "Poteau bois",
             "Panneau bois", "Bardage bois", "Cloture bois", "Pergola bois",
-            "Abri jardin", "Jardinière bois", "Bac à sable", "Balançoire",
-            "Bilboquet bois massif", "Bilboquet chêne premium"
+            "Abri jardin", "Jardinière bois", "Bac à sable", "Balançoire"
         ],
         "mobilier intérieur": [
             "Plan travail bois", "Étagère pin", "Étagère chêne", "Planche étagère",
             "Tasseau bois", "Moulure bois", "Corniche bois", "Plinthe bois",
-            "Parquet massif", "Parquet contrecollé", "Stratifié", "Lambris",
-            "Fursuit armature bois", "Support costume OwO"
+            "Parquet massif", "Parquet contrecollé", "Stratifié", "Lambris"
         ],
         "carrelage et parquet": [
             "Parquet chêne massif", "Parquet hêtre", "Parquet bambou",
@@ -422,8 +386,7 @@ def gen_produits(n=N_PRODUITS):
 
                 # Variantes avec marques et modèles
                 marques = ["ProLine", "MaisonPro", "BuildX", "Crafto", "Lumina", "AquaFix",
-                          "TechMax", "HomeStyle", "PowerTool", "QualityPlus",
-                          "FluffyCraft", "PawsTools", "OwO-Industries", "UwU-Corp"]  # Easter eggs furry
+                          "TechMax", "HomeStyle", "PowerTool", "QualityPlus"]
 
                 for i in range(min(3, (n - code + 1))):  # 1-3 variantes par produit
                     if code > n:
