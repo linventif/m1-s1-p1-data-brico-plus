@@ -4,7 +4,7 @@ Génération partielle : TYPEU, QUALIFICATIONS et USINES
 """
 
 import random
-from database import get_connection
+from database import get_connection, clear_all_data
 from generators import gen_qualifs, gen_usines, gen_typeu
 
 random.seed(31)
@@ -12,6 +12,8 @@ random.seed(31)
 def main():
     with get_connection() as con:
         cur = con.cursor()
+
+        clear_all_data(cur)
 
         typeu = gen_typeu()
         try:

@@ -39,6 +39,19 @@ DEPTS = ["fabrication", "assemblage", "RH", "expédition", "logistique", "direct
 PV_TYPES = ["GSB", "Brico-Express"]
 
 # -----------------------
+# QUALIFICATIONS
+# -----------------------
+QUALIFICATIONS = {
+    # Niveau: (Nom diplôme, taux min €/h, taux max €/h)
+    3: [("CAP", 11.0, 15.0), ("BEP", 11.5, 15.0)],
+    4: [("Bac Pro", 13.0, 17.0), ("BP", 14.0, 18.0), ("Bac", 13.0, 16.5)],
+    5: [("BTS", 15.0, 22.0), ("DUT", 15.5, 22.0)],
+    6: [("Licence Pro", 18.0, 24.0), ("BUT", 18.5, 25.0), ("Licence", 18.0, 23.5)],
+    7: [("Master", 22.0, 30.0), ("Ingénieur", 24.0, 35.0)],
+    8: [("Doctorat", 28.0, 40.0)]
+}
+
+# -----------------------
 # VOLUMÉTRIE
 # -----------------------
 N_EMP = 50
