@@ -58,7 +58,7 @@ def gen_gammes():
 def gen_points_vente_par_zone():
     """
     Génère des points de vente basés sur les zones avec leurs adresses réelles
-    - 1 PV si zone a exactement 5 adresses
+    - 1 PV si zone a exactement <= 5 adresses
     - 2 PV si zone a entre 6 et 9 adresses
     - 3 PV si zone a 10 adresses ou plus
     Retourne (rows, adresses_utilisees)
@@ -72,7 +72,7 @@ def gen_points_vente_par_zone():
         nb_adresses = len(adresses)
 
         # Déterminer le nombre de PV selon le nombre d'adresses
-        if nb_adresses == 5:
+        if nb_adresses <= 5:
             nb_pv = 1
         elif 5 < nb_adresses < 10:
             nb_pv = 2
