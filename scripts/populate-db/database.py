@@ -2,7 +2,8 @@
 """
 Gestion de la base de données et des insertions
 """
-
+# note: si pas d'heure de travail pas de bonnus
+# note: la ville pro employé doit être proche de la ville pro usine
 import oracledb
 from config import HOST, PORT, SERVICE, USER, PASS
 
