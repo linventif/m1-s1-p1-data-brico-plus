@@ -44,6 +44,3 @@ PORT = int(os.getenv("ORACLE_PORT"))
 SERVICE = os.getenv("ORACLE_SERVICE")
 USER = os.getenv("ORACLE_USER")
 PASS = os.getenv("ORACLE_PASS")
-
-print(f"✅ Fichier .env chargé depuis : {ENV_PATH}")
-print(f"→ Connexion prévue : {USER}@{HOST}:{PORT}/{SERVICE}\n")

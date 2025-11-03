@@ -8,7 +8,7 @@ import oracledb
 from config import HOST, PORT, SERVICE, USER, PASS
 
 def clear_all_data(cursor):
-    """Vide toutes les tables dans l'ordre correct (dépendances)"""
+    """Vide toutes les tables dans l'ordre correct"""
     tables_to_clear = [
         "TRAVAILLER_PT_VENTE", "TRAVAILLER_USINE", "PAYER1", "VENDRE",
         "FACTURER", "PAYER2", "RESPONSABLE", "FABRIQUER_ASSEMBLER1",
@@ -18,14 +18,11 @@ def clear_all_data(cursor):
         "CALENDRIER1", "GAMME", "TYPEU"
     ]
 
-    print("🧹 Nettoyage des données existantes...")
     for table in tables_to_clear:
         try:
             cursor.execute(f"DELETE FROM {table}")
-            print(f"   ✓ {table} vidée")
-        except Exception as e:
-            print(f"   ⚠️  Erreur lors du nettoyage de {table}: {e}")
-    print("🧹 Nettoyage terminé.\n")
+        except Exception:
+            pass
 
 def get_connection():
     """Crée et retourne une connexion Oracle"""

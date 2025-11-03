@@ -20,13 +20,11 @@ def main():
     cal3_rows = [(m, y) for (m, y) in cal3]
     cal4_rows = [(y,) for y in cal4]
 
-    print(f"Connecting to {USER}@{HOST}:{PORT}/{SERVICE} ...")
     with get_connection() as con:
         cur = con.cursor()
 
         clear_all_data(cur)
 
-        print("📊 Insertion des données de référence...")
         typeu = gen_typeu()
         cur.executemany("INSERT INTO TYPEU(NOMTU) VALUES (:1)", typeu)
         cur.execute("SELECT CODETU, NOMTU FROM TYPEU ORDER BY CODETU")
@@ -40,7 +38,6 @@ def main():
         cur.executemany("INSERT INTO CALENDRIER3(MOIS, ANNEE) VALUES (:1,:2)", cal3_rows)
         cur.executemany("INSERT INTO CALENDRIER4(ANNEE) VALUES (:1)", cal4_rows)
 
-        print("🏭 Insertion des entités principales...")
         usines = gen_usines()
         cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
                            VALUES (:1,:2,:3,:4,:5)""", usines)
@@ -79,7 +76,6 @@ def main():
         cur.execute("SELECT CODEP FROM PRODUITS ORDER BY CODEP")
         produits_ids = [row[0] for row in cur.fetchall()]
 
-        print("🔗 Insertion des relations...")
         posseder = gen_posseder_with_ids(employes_ids, qualifs_ids)
         cur.executemany("INSERT INTO POSSEDER(CODEE,CODEQ) VALUES (:1,:2)", posseder)
 
@@ -130,7 +126,6 @@ def main():
                            VALUES (:1,:2,:3,:4,:5)""", trav_pv)
 
         con.commit()
-        print("✅ Peuplement terminé.")
 
 if __name__ == "__main__":
     main()
