@@ -65,7 +65,7 @@ CREATE TABLE GAMME(
    CODEG CHAR(3) PRIMARY KEY,
    NOMG VARCHAR2(50),
    CONSTRAINT chk_codeG_format CHECK (REGEXP_LIKE(codeG, '^G[0-9]{2}$')),
-   CONSTRAINT CHK_GAMME_NOMG_ENUM CHECK (NOMG IN ('jardin et piscine','mobilier intérieur','plomberie et chauffage','salle de bain et WC','luminaire, électricité et domotique','quincaillerie','cuisine','peinture et droguerie','carrelage et parquet','matériaux de construction'))
+   CONSTRAINT CHK_GAMME_NOMG_ENUM CHECK (NOMG IN ('jardin et piscine','mobilier intérieur','plomberie et chauffage','salle de bain et WC','luminaire', '    électricité et domotique','quincaillerie','cuisine','peinture et droguerie','carrelage et parquet','matériaux de construction'))
 );
 
 ---------------------------------------------------------
