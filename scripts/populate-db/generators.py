@@ -48,8 +48,76 @@ def gen_usines(n=N_USINES):
 def gen_typeu():
     return [(nom,) for nom in TYPEU]
 
+def gen_typepv():
+    """Génère les types de points de vente"""
+    return [(nom,) for nom in PV_TYPES]
+
 def gen_gammes():
     return [(f"G{str(i).zfill(2)}", nom) for i, nom in enumerate(GAMMES, start=1)]
+
+def gen_points_vente_par_zone():
+    """
+    Génère des points de vente basés sur les zones avec leurs adresses réelles
+    - 1 PV si zone a exactement 5 adresses
+    - 2 PV si zone a entre 6 et 9 adresses
+    - 3 PV si zone a 10 adresses ou plus
+    Retourne (rows, adresses_utilisees)
+    """
+    rows = []
+    adresses_utilisees = []
+    pv_counter = 1
+
+    for zone in ZONES:
+        adresses = ADRESSES_PAR_ZONE[zone]
+        nb_adresses = len(adresses)
+
+        # Déterminer le nombre de PV selon le nombre d'adresses
+        if nb_adresses == 5:
+            nb_pv = 1
+        elif 5 < nb_adresses < 10:
+            nb_pv = 2
+        else:  # >= 10
+            nb_pv = 3
+
+        # Sélectionner des adresses aléatoires pour cette zone
+        adresses_selectionnees = random.sample(adresses, min(nb_pv, nb_adresses))
+
+        for adresse_complete in adresses_selectionnees:
+            # Parser l'adresse: "12 Rue des Tanneurs, 67000 Strasbourg"
+            parts = adresse_complete.split(", ")
+            if len(parts) == 2:
+                rue = parts[0]
+                # Tronquer la rue pour garantir max 50 caractères (limite DB)
+                rue = rue[:49]  # Utiliser 49 pour être sûr
+                cp_ville = parts[1].split(" ", 1)
+                if len(cp_ville) == 2:
+                    cp = cp_ville[0]
+                    ville = cp_ville[1]
+                else:
+                    cp = cp_ville[0]
+                    ville = "Ville"
+            else:
+                rue = adresse_complete[:49]  # Tronquer aussi ici à 49
+                cp = "00000"
+                ville = "Ville"
+
+            # Choisir un type de PV (GSB plus probable)
+            type_pv = random.choices(PV_TYPES, weights=[0.6, 0.4])[0]
+            # Choisir un nom réaliste selon le type
+            nom_pv = random.choice(PV_NAMES[type_pv])
+            tel = phone(hg=False)
+
+            rows.append((nom_pv, rue, cp, ville, tel, type_pv))
+            adresses_utilisees.append({
+                'zone': zone,
+                'adresse': adresse_complete,
+                'type_pv': type_pv,
+                'nom_pv': nom_pv,
+                'ville': ville
+            })
+            pv_counter += 1
+
+    return rows, adresses_utilisees
 
 def gen_points_vente(n=N_PV):
     rows = []

@@ -15,7 +15,7 @@ def clear_all_data(cursor):
         "AUTORISER", "DIRIGER", "AVOIR_TYPE", "ASSEMBLER", "POSSEDER",
         "PRODUITS", "POINTS_DE_VENTE", "DEPARTEMENTS", "QUALIFICATIONS",
         "EMPLOYES", "USINES", "CALENDRIER4", "CALENDRIER3", "CALENDRIER2",
-        "CALENDRIER1", "GAMME", "TYPEU"
+        "CALENDRIER1", "GAMME", "TYPEPV", "TYPEU"
     ]
 
     for table in tables_to_clear:
