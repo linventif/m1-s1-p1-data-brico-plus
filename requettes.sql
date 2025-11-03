@@ -14,7 +14,6 @@ WHERE NOT EXISTS (
     AND pv.CodePV = v.CodePV
     AND pv.TypePV = 'Brico-Express'
 );
-
 --------------------------------------------------------------------------------
 -- 2️⃣  Pour chaque supermarché, donner son nom, son adresse complète
 --      et éventuellement le nombre de salariés qu’il emploie chaque mois
@@ -100,8 +99,6 @@ HAVING SUM(V.Qte_Vendue * F.PrixUnitP) = (
         GROUP BY PV2.CodePV, PV2.NomPV, PV2.TypePV
     ) tab
 );
-
-
 
 --------------------------------------------------------------------------------
 -- 5️⃣  Produits vendus en Haute-Garonne mais non fabriqués dans ce département
@@ -216,11 +213,6 @@ WHERE m.CodeE = e.CodeE
 ORDER BY m.Annee, e.NomE, e.PrenomE, m.Mois;
 
 
-
-
-
-
-
 --------------------------------------------------------------------------------
 -- 7️⃣  Usine, type, ville et département homonyme d’un autre département
 --------------------------------------------------------------------------------
@@ -269,6 +261,8 @@ WHERE NOT EXISTS (
 
 
 
+
+
 --------------------------------------------------------------------------------
 -- 9️⃣  Employés à la fois directeurs d’un département et responsables de gamme
 --      la même année (usine associée au département)
@@ -299,16 +293,9 @@ WHERE
     );
 
 
-
-
-
-
-
-
 --------------------------------------------------------------------------------
 -- 🔟  Usine ayant fabriqué le plus de produits non encore vendus cette année
 --------------------------------------------------------------------------------
-
 SELECT U.NomU, U.RueU, U.CPostalU, U.VilleU
 FROM USINES U, FABRIQUER_ASSEMBLER1 F
 WHERE U.CodeU = F.CodeU
@@ -339,17 +326,9 @@ HAVING SUM(F.Qte_Fab) = (
     ) tab
 );
 
-
-
-
-
-
-
-
 --------------------------------------------------------------------------------
 -- Requête en plus // Détection des anomalies sur les prix unitaires des produits (méthode IQR)
 --------------------------------------------------------------------------------
-
 WITH stats AS (
     SELECT
         PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY PrixUnitP) AS q1,
@@ -381,6 +360,7 @@ SELECT
 FROM user_tables t
 ORDER BY t.table_name;
 
+
 --------------------------------------------------------------------------------
 -- Moyenne mensuelle des salaires par année
 --------------------------------------------------------------------------------
@@ -397,5 +377,3 @@ GROUP BY
     t.ANNEE, t.MOIS
 ORDER BY
     t.ANNEE, t.MOIS;
-
-
