@@ -353,10 +353,15 @@ PRODUITS_PAR_TYPE = {
             "Flexible douche", "Barre douche", "Support douchette",
             "Évacuation douche", "Bonde baignoire", "Trop-plein"
         ],
-        "luminaire, électricité et domotique": [
+        "luminaire": [
             "Applique murale", "Suspension", "Lustre", "Spot encastrable",
             "Réglette LED", "Plafonnier", "Lampadaire", "Lampe bureau",
             "Projecteur LED", "Borne éclairage", "Balise LED"
+        ],
+        "électricité et domotique": [
+            "Tableau électrique", "Disjoncteur", "Interrupteur différentiel",
+            "Box domotique", "Prise connectée", "Interrupteur connecté",
+            "Détecteur mouvement", "Caméra surveillance", "Portier vidéo"
         ],
         "quincaillerie": [
             "Poignée porte", "Béquille", "Crémone", "Espagnolette",
