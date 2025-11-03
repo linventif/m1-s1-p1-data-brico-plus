@@ -5,7 +5,7 @@ Génération partielle : TYPEU, TYPEPV, QUALIFICATIONS, USINES et POINTS_DE_VENT
 
 import random
 from database import get_connection, clear_all_data
-from generators import gen_qualifs, gen_typeu
+from generators import gen_qualifs, gen_typeu, gen_gammes
 from constants import ZONES, ADRESSES_PAR_ZONE, PV_TYPES, PV_NAMES
 from utils import phone
 
@@ -18,17 +18,17 @@ def gen_usines_par_zone():
     """
     rows = []
     adresses_utilisees = []
-    
+
     for zone in ZONES:
         adresses_disponibles = ADRESSES_PAR_ZONE[zone].copy()
-        
+
         if not adresses_disponibles:
             continue
-            
+
         # Sélectionner une adresse aléatoire
         adresse_complete = random.choice(adresses_disponibles)
         adresses_disponibles.remove(adresse_complete)
-        
+
         # Parser l'adresse: "12 Rue des Tanneurs, 67000 Strasbourg"
         parts = adresse_complete.split(", ")
         if len(parts) == 2:
@@ -44,10 +44,10 @@ def gen_usines_par_zone():
             rue = adresse_complete[:49]
             cp = "00000"
             ville = "Ville"
-        
+
         nom_usine = f"Usine {ville}"
         tel = phone(hg=False)
-        
+
         rows.append((nom_usine, rue, cp, ville, tel))
         adresses_utilisees.append({
             'zone': zone,
@@ -55,10 +55,10 @@ def gen_usines_par_zone():
             'nom_usine': nom_usine,
             'ville': ville
         })
-        
+
         # Mettre à jour la liste globale des adresses disponibles
         ADRESSES_PAR_ZONE[zone] = adresses_disponibles
-    
+
     return rows, adresses_utilisees
 
 def gen_points_vente_par_zone():
@@ -118,10 +118,10 @@ def gen_points_vente_par_zone():
                 'nom_pv': nom_pv,
                 'ville': ville
             })
-            
+
             # Retirer l'adresse de la liste disponible
             adresses_disponibles.remove(adresse_complete)
-        
+
         # Mettre à jour la liste globale
         ADRESSES_PAR_ZONE[zone] = adresses_disponibles
 
@@ -141,6 +141,14 @@ def main():
             print(f"✓ {len(typeu)} types d'usines insérés")
         except Exception as e:
             print(f"Erreur TYPEU: {e}")
+
+        # Insertion des gammes
+        gammes = gen_gammes()
+        try:
+            cur.executemany("INSERT INTO GAMME(CODEG, NOMG) VALUES (:1, :2)", gammes)
+            print(f"✓ {len(gammes)} gammes insérées")
+        except Exception as e:
+            print(f"Erreur GAMME: {e}")
 
         # Note: TYPEPV table n'existe pas dans le schéma - les types sont validés par une contrainte CHECK
 

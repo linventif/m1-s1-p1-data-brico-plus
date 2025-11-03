@@ -226,7 +226,7 @@ TYPEU = ["chaine assemblage", "scierie", "métallurgie", "fonderie"]
 
 GAMMES = [
     "jardin et piscine", "mobilier intérieur", "plomberie et chauffage", "salle de bain et WC",
-    "luminaire, électricité et domotique", "quincaillerie", "cuisine",
+    "luminaire", "électricité et domotique", "quincaillerie", "cuisine",
     "peinture et droguerie", "carrelage et parquet", "matériaux de construction"
 ]
 
