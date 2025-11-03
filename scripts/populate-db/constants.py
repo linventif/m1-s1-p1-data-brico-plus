@@ -277,95 +277,198 @@ YEAR_NOW = dt.date.today().year
 MONTH_NOW = dt.date.today().month
 
 # -----------------------
-# PRODUITS PAR TYPE D'USINE
+# RECETTES DE PRODUITS
+# Format: (nom_produit, gamme, type_usine)
 # -----------------------
-PRODUITS_PAR_TYPE = {
-    "chaine assemblage": {
-        "jardin et piscine": [
-            "Tondeuse électrique", "Tondeuse thermique", "Coupe-bordures", "Taille-haie",
-            "Souffleur", "Scarificateur", "Bineuse", "Pompe piscine", "Filtre piscine",
-            "Robot piscine", "Échelle piscine", "Bâche piscine", "Alarme piscine"
-        ],
-        "mobilier intérieur": [
-            "Canapé d'angle", "Fauteuil relax", "Table basse", "Bibliothèque",
-            "Armoire penderie", "Commode", "Table à manger", "Chaises", "Lit",
-            "Matelas", "Sommier", "Table de chevet", "Bureau", "Étagères"
-        ],
-        "matériaux de construction": [
-            "Perceuse visseuse", "Perceuse à percussion", "Visseuse impact",
-            "Scie circulaire", "Scie sauteuse", "Ponceuse orbitale", "Ponceuse excentrique",
-            "Défonceuse", "Raboteuse", "Meuleuse", "Perforateur", "Marteau piqueur"
-        ],
-        "luminaire, électricité et domotique": [
-            "Tableau électrique", "Disjoncteur", "Interrupteur différentiel",
-            "Box domotique", "Prise connectée", "Interrupteur connecté",
-            "Détecteur mouvement", "Caméra surveillance", "Portier vidéo"
-        ]
-    },
-    "scierie": {
-        "jardin et piscine": [
-            "Planche pin", "Planche chêne", "Lame terrasse", "Poteau bois",
-            "Panneau bois", "Bardage bois", "Cloture bois", "Pergola bois",
-            "Abri jardin", "Jardinière bois", "Bac à sable", "Balançoire"
-        ],
-        "mobilier intérieur": [
-            "Plan travail bois", "Étagère pin", "Étagère chêne", "Planche étagère",
-            "Tasseau bois", "Moulure bois", "Corniche bois", "Plinthe bois",
-            "Parquet massif", "Parquet contrecollé", "Stratifié", "Lambris"
-        ],
-        "carrelage et parquet": [
-            "Parquet chêne massif", "Parquet hêtre", "Parquet bambou",
-            "Parquet flottant", "Lame PVC", "Sol vinyle", "Sous-couche parquet"
-        ],
-        "matériaux de construction": [
-            "Poutre bois", "Chevron", "Latte", "Madrier", "Planche coffrage",
-            "OSB", "Contreplaqué", "Médium MDF", "Aggloméré", "Panneau OSB"
-        ]
-    },
-    "métallurgie": {
-        "quincaillerie": [
-            "Vis inox", "Boulon acier", "Écrou", "Rondelle", "Clou", "Pointe",
-            "Cheville", "Tire-fond", "Tige filetée", "Chaîne acier", "Câble acier",
-            "Serrure", "Verrou", "Cadenas", "Gond", "Paumelle", "Charnière"
-        ],
-        "plomberie et chauffage": [
-            "Tube cuivre", "Raccord cuivre", "Tube PER", "Raccord PER",
-            "Radiateur acier", "Radiateur fonte", "Collecteur chauffage",
-            "Vanne d'arrêt", "Clapet anti-retour", "Détendeur gaz"
-        ],
-        "luminaire, électricité et domotique": [
-            "Gaine électrique", "Tube IRL", "Chemin câbles", "Goulottes",
-            "Boîtier étanche", "Armoire électrique", "Rail DIN", "Borne connexion"
-        ],
-        "matériaux de construction": [
-            "Clé plate", "Clé à pipe", "Tournevis", "Pince", "Serre-joint",
-            "Étau", "Lime", "Râpe", "Burins", "Pointeau", "Compas"
-        ]
-    },
-    "fonderie": {
-        "plomberie et chauffage": [
-            "Mitigeur cuisine", "Mitigeur douche", "Robinet lavabo",
-            "Robinet évier", "Douchette", "Colonne douche", "Bonde",
-            "Siphon", "Collecteur fonte", "Regard fonte", "Bouche égout"
-        ],
-        "salle de bain et WC": [
-            "Robinet baignoire", "Mitigeur thermostatique", "Pomme douche",
-            "Flexible douche", "Barre douche", "Support douchette",
-            "Évacuation douche", "Bonde baignoire", "Trop-plein"
-        ],
-        "luminaire": [
-            "Applique murale", "Suspension", "Lustre", "Spot encastrable",
-            "Réglette LED", "Plafonnier", "Lampadaire", "Lampe bureau",
-            "Projecteur LED", "Borne éclairage", "Balise LED"
-        ],
-        "électricité et domotique": [
-            "Tableau électrique", "Disjoncteur", "Interrupteur différentiel",
-            "Box domotique", "Prise connectée", "Interrupteur connecté",
-            "Détecteur mouvement", "Caméra surveillance", "Portier vidéo"
-        ],
-        "quincaillerie": [
-            "Poignée porte", "Béquille", "Crémone", "Espagnolette",
-            "Ferme-porte", "Butée porte", "Heurtoir", "Boîte aux lettres"
-        ]
-    }
-}
+RECETTES_PRODUITS = [
+    # Produits de chaine assemblage
+    ("Tondeuse électrique", "jardin et piscine", "chaine assemblage"),
+    ("Tondeuse thermique", "jardin et piscine", "chaine assemblage"),
+    ("Coupe-bordures", "jardin et piscine", "chaine assemblage"),
+    ("Taille-haie", "jardin et piscine", "chaine assemblage"),
+    ("Souffleur", "jardin et piscine", "chaine assemblage"),
+    ("Scarificateur", "jardin et piscine", "chaine assemblage"),
+    ("Bineuse", "jardin et piscine", "chaine assemblage"),
+    ("Pompe piscine", "jardin et piscine", "chaine assemblage"),
+    ("Filtre piscine", "jardin et piscine", "chaine assemblage"),
+    ("Robot piscine", "jardin et piscine", "chaine assemblage"),
+    ("Échelle piscine", "jardin et piscine", "chaine assemblage"),
+    ("Bâche piscine", "jardin et piscine", "chaine assemblage"),
+    ("Alarme piscine", "jardin et piscine", "chaine assemblage"),
+    ("Canapé d'angle", "mobilier intérieur", "chaine assemblage"),
+    ("Fauteuil relax", "mobilier intérieur", "chaine assemblage"),
+    ("Table basse", "mobilier intérieur", "chaine assemblage"),
+    ("Bibliothèque", "mobilier intérieur", "chaine assemblage"),
+    ("Armoire penderie", "mobilier intérieur", "chaine assemblage"),
+    ("Commode", "mobilier intérieur", "chaine assemblage"),
+    ("Table à manger", "mobilier intérieur", "chaine assemblage"),
+    ("Chaises", "mobilier intérieur", "chaine assemblage"),
+    ("Lit", "mobilier intérieur", "chaine assemblage"),
+    ("Matelas", "mobilier intérieur", "chaine assemblage"),
+    ("Sommier", "mobilier intérieur", "chaine assemblage"),
+    ("Table de chevet", "mobilier intérieur", "chaine assemblage"),
+    ("Bureau", "mobilier intérieur", "chaine assemblage"),
+    ("Étagères", "mobilier intérieur", "chaine assemblage"),
+    ("Perceuse visseuse", "matériaux de construction", "chaine assemblage"),
+    ("Perceuse à percussion", "matériaux de construction", "chaine assemblage"),
+    ("Visseuse impact", "matériaux de construction", "chaine assemblage"),
+    ("Scie circulaire", "matériaux de construction", "chaine assemblage"),
+    ("Scie sauteuse", "matériaux de construction", "chaine assemblage"),
+    ("Ponceuse orbitale", "matériaux de construction", "chaine assemblage"),
+    ("Ponceuse excentrique", "matériaux de construction", "chaine assemblage"),
+    ("Défonceuse", "matériaux de construction", "chaine assemblage"),
+    ("Raboteuse", "matériaux de construction", "chaine assemblage"),
+    ("Meuleuse", "matériaux de construction", "chaine assemblage"),
+    ("Perforateur", "matériaux de construction", "chaine assemblage"),
+    ("Marteau piqueur", "matériaux de construction", "chaine assemblage"),
+    ("Tableau électrique CA", "électricité et domotique", "chaine assemblage"),
+    ("Disjoncteur CA", "électricité et domotique", "chaine assemblage"),
+    ("Interrupteur différentiel CA", "électricité et domotique", "chaine assemblage"),
+    ("Box domotique", "électricité et domotique", "chaine assemblage"),
+    ("Prise connectée", "électricité et domotique", "chaine assemblage"),
+    ("Interrupteur connecté", "électricité et domotique", "chaine assemblage"),
+    ("Détecteur mouvement", "électricité et domotique", "chaine assemblage"),
+    ("Caméra surveillance", "électricité et domotique", "chaine assemblage"),
+    ("Portier vidéo", "électricité et domotique", "chaine assemblage"),
+
+    # Produits de scierie
+    ("Planche pin", "jardin et piscine", "scierie"),
+    ("Planche chêne", "jardin et piscine", "scierie"),
+    ("Lame terrasse", "jardin et piscine", "scierie"),
+    ("Poteau bois", "jardin et piscine", "scierie"),
+    ("Panneau bois", "jardin et piscine", "scierie"),
+    ("Bardage bois", "jardin et piscine", "scierie"),
+    ("Cloture bois", "jardin et piscine", "scierie"),
+    ("Pergola bois", "jardin et piscine", "scierie"),
+    ("Abri jardin", "jardin et piscine", "scierie"),
+    ("Jardinière bois", "jardin et piscine", "scierie"),
+    ("Bac à sable", "jardin et piscine", "scierie"),
+    ("Balançoire", "jardin et piscine", "scierie"),
+    ("Plan travail bois", "mobilier intérieur", "scierie"),
+    ("Étagère pin", "mobilier intérieur", "scierie"),
+    ("Étagère chêne", "mobilier intérieur", "scierie"),
+    ("Planche étagère", "mobilier intérieur", "scierie"),
+    ("Tasseau bois", "mobilier intérieur", "scierie"),
+    ("Moulure bois", "mobilier intérieur", "scierie"),
+    ("Corniche bois", "mobilier intérieur", "scierie"),
+    ("Plinthe bois", "mobilier intérieur", "scierie"),
+    ("Parquet massif", "mobilier intérieur", "scierie"),
+    ("Parquet contrecollé", "mobilier intérieur", "scierie"),
+    ("Stratifié", "mobilier intérieur", "scierie"),
+    ("Lambris", "mobilier intérieur", "scierie"),
+    ("Parquet chêne massif", "carrelage et parquet", "scierie"),
+    ("Parquet hêtre", "carrelage et parquet", "scierie"),
+    ("Parquet bambou", "carrelage et parquet", "scierie"),
+    ("Parquet flottant", "carrelage et parquet", "scierie"),
+    ("Lame PVC", "carrelage et parquet", "scierie"),
+    ("Sol vinyle", "carrelage et parquet", "scierie"),
+    ("Sous-couche parquet", "carrelage et parquet", "scierie"),
+    ("Poutre bois", "matériaux de construction", "scierie"),
+    ("Chevron", "matériaux de construction", "scierie"),
+    ("Latte", "matériaux de construction", "scierie"),
+    ("Madrier", "matériaux de construction", "scierie"),
+    ("Planche coffrage", "matériaux de construction", "scierie"),
+    ("OSB", "matériaux de construction", "scierie"),
+    ("Contreplaqué", "matériaux de construction", "scierie"),
+    ("Médium MDF", "matériaux de construction", "scierie"),
+    ("Aggloméré", "matériaux de construction", "scierie"),
+    ("Panneau OSB", "matériaux de construction", "scierie"),
+
+    # Produits de métallurgie
+    ("Vis inox", "quincaillerie", "métallurgie"),
+    ("Boulon acier", "quincaillerie", "métallurgie"),
+    ("Écrou", "quincaillerie", "métallurgie"),
+    ("Rondelle", "quincaillerie", "métallurgie"),
+    ("Clou", "quincaillerie", "métallurgie"),
+    ("Pointe", "quincaillerie", "métallurgie"),
+    ("Cheville", "quincaillerie", "métallurgie"),
+    ("Tire-fond", "quincaillerie", "métallurgie"),
+    ("Tige filetée", "quincaillerie", "métallurgie"),
+    ("Chaîne acier", "quincaillerie", "métallurgie"),
+    ("Câble acier", "quincaillerie", "métallurgie"),
+    ("Serrure", "quincaillerie", "métallurgie"),
+    ("Verrou", "quincaillerie", "métallurgie"),
+    ("Cadenas", "quincaillerie", "métallurgie"),
+    ("Gond", "quincaillerie", "métallurgie"),
+    ("Paumelle", "quincaillerie", "métallurgie"),
+    ("Charnière", "quincaillerie", "métallurgie"),
+    ("Tube cuivre", "plomberie et chauffage", "métallurgie"),
+    ("Raccord cuivre", "plomberie et chauffage", "métallurgie"),
+    ("Tube PER", "plomberie et chauffage", "métallurgie"),
+    ("Raccord PER", "plomberie et chauffage", "métallurgie"),
+    ("Radiateur acier", "plomberie et chauffage", "métallurgie"),
+    ("Radiateur fonte", "plomberie et chauffage", "métallurgie"),
+    ("Collecteur chauffage", "plomberie et chauffage", "métallurgie"),
+    ("Vanne d'arrêt", "plomberie et chauffage", "métallurgie"),
+    ("Clapet anti-retour", "plomberie et chauffage", "métallurgie"),
+    ("Détendeur gaz", "plomberie et chauffage", "métallurgie"),
+    ("Gaine électrique", "électricité et domotique", "métallurgie"),
+    ("Tube IRL", "électricité et domotique", "métallurgie"),
+    ("Chemin câbles", "électricité et domotique", "métallurgie"),
+    ("Goulottes", "électricité et domotique", "métallurgie"),
+    ("Boîtier étanche", "électricité et domotique", "métallurgie"),
+    ("Armoire électrique", "électricité et domotique", "métallurgie"),
+    ("Rail DIN", "électricité et domotique", "métallurgie"),
+    ("Borne connexion", "électricité et domotique", "métallurgie"),
+    ("Clé plate", "matériaux de construction", "métallurgie"),
+    ("Clé à pipe", "matériaux de construction", "métallurgie"),
+    ("Tournevis", "matériaux de construction", "métallurgie"),
+    ("Pince", "matériaux de construction", "métallurgie"),
+    ("Serre-joint", "matériaux de construction", "métallurgie"),
+    ("Étau", "matériaux de construction", "métallurgie"),
+    ("Lime", "matériaux de construction", "métallurgie"),
+    ("Râpe", "matériaux de construction", "métallurgie"),
+    ("Burins", "matériaux de construction", "métallurgie"),
+    ("Pointeau", "matériaux de construction", "métallurgie"),
+    ("Compas", "matériaux de construction", "métallurgie"),
+
+    # Produits de fonderie
+    ("Mitigeur cuisine", "plomberie et chauffage", "fonderie"),
+    ("Mitigeur douche", "plomberie et chauffage", "fonderie"),
+    ("Robinet lavabo", "plomberie et chauffage", "fonderie"),
+    ("Robinet évier", "plomberie et chauffage", "fonderie"),
+    ("Douchette", "plomberie et chauffage", "fonderie"),
+    ("Colonne douche", "plomberie et chauffage", "fonderie"),
+    ("Bonde", "plomberie et chauffage", "fonderie"),
+    ("Siphon", "plomberie et chauffage", "fonderie"),
+    ("Collecteur fonte", "plomberie et chauffage", "fonderie"),
+    ("Regard fonte", "plomberie et chauffage", "fonderie"),
+    ("Bouche égout", "plomberie et chauffage", "fonderie"),
+    ("Robinet baignoire", "salle de bain et WC", "fonderie"),
+    ("Mitigeur thermostatique", "salle de bain et WC", "fonderie"),
+    ("Pomme douche", "salle de bain et WC", "fonderie"),
+    ("Flexible douche", "salle de bain et WC", "fonderie"),
+    ("Barre douche", "salle de bain et WC", "fonderie"),
+    ("Support douchette", "salle de bain et WC", "fonderie"),
+    ("Évacuation douche", "salle de bain et WC", "fonderie"),
+    ("Bonde baignoire", "salle de bain et WC", "fonderie"),
+    ("Trop-plein", "salle de bain et WC", "fonderie"),
+    ("Applique murale", "luminaire", "fonderie"),
+    ("Suspension", "luminaire", "fonderie"),
+    ("Lustre", "luminaire", "fonderie"),
+    ("Spot encastrable", "luminaire", "fonderie"),
+    ("Réglette LED", "luminaire", "fonderie"),
+    ("Plafonnier", "luminaire", "fonderie"),
+    ("Lampadaire", "luminaire", "fonderie"),
+    ("Lampe bureau", "luminaire", "fonderie"),
+    ("Projecteur LED", "luminaire", "fonderie"),
+    ("Borne éclairage", "luminaire", "fonderie"),
+    ("Balise LED", "luminaire", "fonderie"),
+    ("Tableau électrique FO", "électricité et domotique", "fonderie"),
+    ("Disjoncteur FO", "électricité et domotique", "fonderie"),
+    ("Interrupteur différentiel FO", "électricité et domotique", "fonderie"),
+    ("Box domotique FO", "électricité et domotique", "fonderie"),
+    ("Prise connectée FO", "électricité et domotique", "fonderie"),
+    ("Interrupteur connecté FO", "électricité et domotique", "fonderie"),
+    ("Détecteur mouvement FO", "électricité et domotique", "fonderie"),
+    ("Caméra surveillance FO", "électricité et domotique", "fonderie"),
+    ("Portier vidéo FO", "électricité et domotique", "fonderie"),
+    ("Poignée porte", "quincaillerie", "fonderie"),
+    ("Béquille", "quincaillerie", "fonderie"),
+    ("Crémone", "quincaillerie", "fonderie"),
+    ("Espagnolette", "quincaillerie", "fonderie"),
+    ("Ferme-porte", "quincaillerie", "fonderie"),
+    ("Butée porte", "quincaillerie", "fonderie"),
+    ("Heurtoir", "quincaillerie", "fonderie"),
+    ("Boîte aux lettres", "quincaillerie", "fonderie"),
+]

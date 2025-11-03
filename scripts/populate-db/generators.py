@@ -131,41 +131,40 @@ def gen_points_vente(n=N_PV):
     return rows
 
 def gen_produits(n=N_PRODUITS):
-    """Génère des produits réalistes selon les types d'usines"""
+    """Génère des produits réalistes à partir des recettes"""
     rows = []
     code = 1
-    produits_par_type_usine = n // len(TYPEU)
 
-    for type_usine in TYPEU:
-        if type_usine not in PRODUITS_PAR_TYPE:
+    marques = ["ProLine", "MaisonPro", "BuildX", "Crafto", "Lumina", "AquaFix",
+              "TechMax", "HomeStyle", "PowerTool", "QualityPlus"]
+
+    # Pour chaque recette, générer plusieurs variantes avec des modèles différents
+    for nom_produit, gamme_nom, type_usine in RECETTES_PRODUITS:
+        if code > n:
+            break
+
+        # Trouver le code de la gamme
+        codeg = None
+        for i, g_nom in enumerate(GAMMES, start=1):
+            if g_nom == gamme_nom:
+                codeg = f"G{str(i).zfill(2)}"
+                break
+
+        if not codeg:
             continue
 
-        for gamme_nom, produits_base in PRODUITS_PAR_TYPE[type_usine].items():
-            codeg = None
-            for i, g_nom in enumerate(GAMMES, start=1):
-                if g_nom == gamme_nom:
-                    codeg = f"G{str(i).zfill(2)}"
-                    break
+        # Générer 2-3 variantes du produit avec différentes marques et modèles
+        nb_variantes = random.randint(2, 3)
+        for i in range(min(nb_variantes, (n - code + 1))):
+            if code > n:
+                break
+            marque = random.choice(marques)
+            modele = random.randint(100, 999)
+            nom_final = f"{nom_produit} {modele}"
+            rows.append((nom_final, marque, codeg))
+            code += 1
 
-            if not codeg:
-                continue
-
-            for produit_base in produits_base:
-                if code > n:
-                    break
-
-                marques = ["ProLine", "MaisonPro", "BuildX", "Crafto", "Lumina", "AquaFix",
-                          "TechMax", "HomeStyle", "PowerTool", "QualityPlus"]
-
-                for i in range(min(3, (n - code + 1))):
-                    if code > n:
-                        break
-                    marque = random.choice(marques)
-                    modele = random.randint(100, 999)
-                    nom_final = f"{produit_base} {modele}"
-                    rows.append((nom_final, marque, codeg))
-                    code += 1
-
+    # Si on n'a pas assez de produits, générer des produits génériques
     while len(rows) < n:
         nom = f"Produit générique {random.randint(1000, 9999)}"
         marque = random.choice(["Generic", "Standard", "Basic"])
