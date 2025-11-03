@@ -129,18 +129,77 @@ WHERE p.CodeP = v.CodeP
   )
 ORDER BY fct.PrixUnitP DESC;
 
-
 --------------------------------------------------------------------------------
 -- 6️⃣  Pour les deux dernières années, salaires mensuels des employés
 --------------------------------------------------------------------------------
-SELECT p1.Annee,
-       e.NomE,
-       e.PrenomE,
-       (p1.FixeMensuele * p1.Indicesale) AS SalaireMensuel
-FROM PAYER1 p1, EMPLOYES e
-WHERE e.CodeE = p1.CodeE
-  AND p1.Annee >= EXTRACT(YEAR FROM CURRENT_DATE) - 1
-ORDER BY p1.Annee, e.NomE, e.PrenomE;
+/* Salaires mensuels (année courante et N-1) – jointures implicites */
+WITH
+months AS (
+  SELECT c.mois, c.annee
+  FROM CALENDRIER3 c
+  WHERE c.annee IN (EXTRACT(YEAR FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE) - 1)
+),
+emp_year AS (
+  SELECT e.codee, e.nome, e.prenome, p1.annee, p1.fixemensuele, p1.indicesale
+  FROM EMPLOYES e, PAYER1 p1
+  WHERE p1.codee = e.codee
+    AND p1.annee IN (EXTRACT(YEAR FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE) - 1)
+),
+emp_month AS (
+  SELECT ey.codee, ey.nome, ey.prenome, m.mois, m.annee,
+         ey.fixemensuele, ey.indicesale
+  FROM emp_year ey, months m
+  WHERE m.annee = ey.annee
+),
+heures_tot AS (
+  /* PV + Usine, agrégé par (employé, mois, année) */
+  SELECT x.codee, x.mois, x.annee, SUM(x.heures) AS heures_total
+  FROM (
+    SELECT tpv.codee, tpv.mois, tpv.annee, tpv.nbheures_pv AS heures
+    FROM TRAVAILLER_PT_VENTE tpv
+    WHERE tpv.annee IN (EXTRACT(YEAR FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE) - 1)
+    UNION ALL
+    SELECT tu.codee, tu.mois, tu.annee, tu.nbheures_u AS heures
+    FROM TRAVAILLER_USINE tu
+    WHERE tu.annee IN (EXTRACT(YEAR FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE) - 1)
+  ) x
+  GROUP BY x.codee, x.mois, x.annee
+),
+commissions AS (
+  /* Σ (QTE_VENDUE * PRIXUNITP * INDICERETROCESSIONG) par (employé, mois, année) */
+  SELECT v.codee, v.mois, v.annee,
+         SUM(v.qte_vendue * f.prixunitp * p2.indiceretrocessiong) AS commission
+  FROM VENDRE v, FACTURER f, PRODUITS pr, PAYER2 p2
+  WHERE f.codep = v.codep
+    AND f.mois  = v.mois
+    AND f.annee = v.annee
+    AND pr.codep = v.codep
+    AND p2.codeg = pr.codeg
+    AND p2.annee = v.annee
+    AND v.annee IN (EXTRACT(YEAR FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE) - 1)
+  GROUP BY v.codee, v.mois, v.annee
+)
+SELECT
+  em.codee,
+  em.nome,
+  em.prenome,
+  em.annee,
+  em.mois,
+  em.fixemensuele                                   AS partie_fixe,
+  (em.indicesale * NVL(ht.heures_total, 0))         AS partie_travail,
+  NVL(cms.commission, 0)                            AS partie_objectif,
+  em.fixemensuele
+  + (em.indicesale * NVL(ht.heures_total, 0))
+  + NVL(cms.commission, 0)                          AS salaire_mensuel
+FROM emp_month em, heures_tot ht, commissions cms
+WHERE ht.codee(+) = em.codee
+  AND ht.mois(+)  = em.mois
+  AND ht.annee(+) = em.annee
+  AND cms.codee(+) = em.codee
+  AND cms.mois(+)  = em.mois
+  AND cms.annee(+) = em.annee
+ORDER BY em.annee, em.nome, em.prenome, em.mois;
+
 
 
 --------------------------------------------------------------------------------
