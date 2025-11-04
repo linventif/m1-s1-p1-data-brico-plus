@@ -18,13 +18,21 @@ def main():
         cur = con.cursor()
         clear_all_data(cur)
 
-        # typeu = gen_typeu()
-        # cur.executemany("INSERT INTO TYPEU(NOMTU) VALUES (:1)", typeu)
-        # cur.execute("SELECT CODETU, NOMTU FROM TYPEU ORDER BY CODETU")
-        # typeu_with_ids = cur.fetchall()
 
-        # gammes = gen_gammes()
-        # cur.executemany("INSERT INTO GAMME(CODEG, NOMG) VALUES (:1,:2)", gammes)
+
+        # usines = gen_usines()
+        # cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
+        #                    VALUES (:1,:2,:3,:4,:5)""", usines)
+        # cur.execute("SELECT CODEU, NOMU FROM USINES ORDER BY CODEU")
+        # usines_with_ids = cur.fetchall()
+        # '''
+        typeu = gen_typeu()
+        cur.executemany("INSERT INTO TYPEU(NOMTU) VALUES (:1)", typeu)
+        cur.execute("SELECT CODETU, NOMTU FROM TYPEU ORDER BY CODETU")
+        typeu_with_ids = cur.fetchall()
+
+        gammes = gen_gammes()
+        cur.executemany("INSERT INTO GAMME(CODEG, NOMG) VALUES (:1,:2)", gammes)
 
         cal_yyyy_mm_dd = genCalendrier()
         cal_yyyy_mm_dd = [(d,) for d in cal_yyyy_mm_dd]
@@ -36,12 +44,6 @@ def main():
         cur.executemany("INSERT INTO CALENDRIER3(MOIS, ANNEE) VALUES (:1,:2)", cal_split)
         cur.executemany("INSERT INTO CALENDRIER4(ANNEE) VALUES (:1)", cal_yyyy)
 
-        # usines = gen_usines()
-        # cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
-        #                    VALUES (:1,:2,:3,:4,:5)""", usines)
-        # cur.execute("SELECT CODEU, NOMU FROM USINES ORDER BY CODEU")
-        # usines_with_ids = cur.fetchall()
-
         employes = gen_employes()
         cur.executemany("""INSERT INTO EMPLOYES
                            (NOME,PRENOME,RUEPERSE,CPOSTALPERSE,VILLEPERSE,
@@ -49,13 +51,28 @@ def main():
                            VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10)""", employes)
         cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
         employes_ids = [row[0] for row in cur.fetchall()]
+        # '''
 
-        # qualifs = gen_qualifs()
-        # cur.executemany("""INSERT INTO QUALIFICATIONS
-        #                    (NOMQ,TAUXMINQ,CODEQ_EST_COMPLETEE)
-        #                    VALUES (:1,:2,:3)""", qualifs)
-        # cur.execute("SELECT CODEQ FROM QUALIFICATIONS ORDER BY CODEQ")
-        # qualifs_ids = [row[0] for row in cur.fetchall()]
+        qualifs = gen_qualifs()
+        # Insert with CODEQ_EST_COMPLETEE as None
+        qualifs_insert = [(diplome, taux, None) for diplome, taux, base_diplome in qualifs]
+        cur.executemany("""INSERT INTO QUALIFICATIONS
+                           (NOMQ,TAUXMINQ,CODEQ_EST_COMPLETEE)
+                           VALUES (:1,:2,:3)""", qualifs_insert)
+        cur.execute("SELECT CODEQ, NOMQ FROM QUALIFICATIONS ORDER BY CODEQ")
+        qualifs_rows = cur.fetchall()
+        # Build a mapping from NOMQ to CODEQ
+        nomq_to_codeq = {row[1]: row[0] for row in qualifs_rows}
+        # Now update CODEQ_EST_COMPLETEE for each qualification
+        qualifs_to_update = []
+        for i, q in enumerate(qualifs):
+            diplome, taux, base_diplome = q
+            codeq = nomq_to_codeq[diplome]
+            base_codeq = nomq_to_codeq.get(base_diplome, codeq)
+            if base_codeq != codeq:
+                qualifs_to_update.append((base_codeq, codeq))
+        if qualifs_to_update:
+            cur.executemany("UPDATE QUALIFICATIONS SET CODEQ_EST_COMPLETEE = :1 WHERE CODEQ = :2", qualifs_to_update)
 
         # departements = gen_departements_with_ids(usines_with_ids)
         # cur.executemany("""INSERT INTO DEPARTEMENTS(NOMD,CODEU) VALUES (:1,:2)""", departements)

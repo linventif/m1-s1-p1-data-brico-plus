@@ -21,14 +21,19 @@ def gen_employes(n=NOMBRE_EMPLOYES_PAR_USINE * NOMBRE_USINES + NOMBRE_POINTS_VEN
         ))
     return rows
 
-# def gen_qualifs():
-#     """Génère des qualifications avec des diplômes français (1 par titre)"""
-#     rows = []
-#     for niveau in QUALIFICATIONS.keys():
-#         for diplome, taux_min, taux_max in QUALIFICATIONS[niveau]:
-#             taux = round(random.uniform(taux_min, taux_max), 2)
-#             rows.append((diplome, taux, None))
-#     return rows
+def gen_qualifs():
+    """Génère des qualifications avec des diplômes français (1 par titre)"""
+    rows = []
+    for niveau in QUALIFICATIONS.keys():
+        for q in QUALIFICATIONS[niveau]:
+            if len(q) == 4:
+                diplome, taux_min, taux_max, base_diplome = q
+            else:
+                diplome, taux_min, taux_max = q
+                base_diplome = diplome
+            taux = round(random.uniform(taux_min, taux_max), 2)
+            rows.append((diplome, taux, base_diplome))
+    return rows
 
 # def gen_usines(n=N_USINES):
 #     rows = []
@@ -38,15 +43,15 @@ def gen_employes(n=NOMBRE_EMPLOYES_PAR_USINE * NOMBRE_USINES + NOMBRE_POINTS_VEN
 #         rows.append((nom_usine, street(), cp, city, phone(hg=cp.startswith("31"))))
 #     return rows
 
-# def gen_typeu():
-#     return [(nom,) for nom in TYPEU]
+def gen_typeu():
+    return [(nom,) for nom in TYPEU]
 
-# def gen_typepv():
-#     """Génère les types de points de vente"""
-#     return [(nom,) for nom in PV_TYPES]
+def gen_typepv():
+    """Génère les types de points de vente"""
+    return [(nom,) for nom in PV_TYPES]
 
-# def gen_gammes():
-#     return [(f"G{str(i).zfill(2)}", nom) for i, nom in enumerate(GAMMES, start=1)]
+def gen_gammes():
+    return [(f"G{str(i).zfill(2)}", nom) for i, nom in enumerate(GAMMES, start=1)]
 
 # def gen_points_vente_par_zone():
 #     """
