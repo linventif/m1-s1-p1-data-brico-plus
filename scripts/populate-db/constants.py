@@ -253,19 +253,190 @@ PV_NAMES = {
 # -----------------------
 # QUALIFICATIONS
 # -----------------------
+
+# Bases
 QUALIFICATIONS = {
-    # Niveau: (Nom diplôme, taux min €/h, taux max €/h)
-    3: [("CAP", 11.0, 15.0), ("BEP", 11.5, 15.0)],
-    4: [("Bac Pro", 13.0, 17.0), ("BP", 14.0, 18.0), ("Bac", 13.0, 16.5)],
-    5: [("BTS", 15.0, 22.0), ("DUT", 15.5, 22.0)],
-    6: [("Licence Pro", 18.0, 24.0), ("BUT", 18.5, 25.0), ("Licence", 18.0, 23.5)],
-    7: [("Master", 22.0, 30.0), ("Ingénieur", 24.0, 35.0)],
-    8: [("Doctorat", 28.0, 40.0)]
+    # Niveau: [(diplome_complet, salaire_min, salaire_max, base_diplome)]
+    3: [
+        # Bases
+        ("CAP", 11.0, 15.0),
+        ("BEP", 11.5, 15.0),
+        # Spécialisations
+        ("CAP Électricien", 11.5, 16.0, "CAP"),
+        ("BEP Chaîne Assemblage", 11.5, 15.0, "BEP"),
+        ("BEP Scierie", 11.5, 15.0, "BEP"),
+        ("BEP Métallurgie", 11.5, 15.0, "BEP"),
+        ("BEP Fonderie", 11.5, 15.0, "BEP"),
+        ("BEP Fabrication", 11.5, 15.0, "BEP"),
+        ("BEP Assemblage", 11.5, 15.0, "BEP"),
+        ("BEP RH", 11.5, 15.0, "BEP"),
+        ("BEP Expédition", 11.5, 15.0, "BEP"),
+        ("BEP Logistique", 11.5, 15.0, "BEP"),
+        ("BEP Direction", 11.5, 15.0, "BEP"),
+        ("BEP Finance", 11.5, 15.0, "BEP"),
+        ("CAP Chaîne Assemblage", 11.0, 15.0, "CAP"),
+        ("CAP Scierie", 11.0, 15.0, "CAP"),
+        ("CAP Métallurgie", 11.0, 15.0, "CAP"),
+        ("CAP Fonderie", 11.0, 15.0, "CAP"),
+        ("CAP Fabrication", 11.0, 15.0, "CAP"),
+        ("CAP Assemblage", 11.0, 15.0, "CAP"),
+        ("CAP RH", 11.0, 15.0, "CAP"),
+        ("CAP Expédition", 11.0, 15.0, "CAP"),
+        ("CAP Logistique", 11.0, 15.0, "CAP"),
+        ("CAP Direction", 11.0, 15.0, "CAP"),
+        ("CAP Finance", 11.0, 15.0, "CAP"),
+    ],
+    4: [
+        # Bases
+        ("Bac Pro", 13.0, 17.0),
+        ("BP", 14.0, 18.0),
+        ("Bac", 13.0, 16.5),
+        # Spécialisations BP
+        ("BP Chaîne Assemblage", 14.0, 18.0, "BP"),
+        ("BP Scierie", 14.0, 18.0, "BP"),
+        ("BP Métallurgie", 14.0, 18.0, "BP"),
+        ("BP Fonderie", 14.0, 18.0, "BP"),
+        ("BP Fabrication", 14.0, 18.0, "BP"),
+        ("BP Assemblage", 14.0, 18.0, "BP"),
+        ("BP RH", 14.0, 18.0, "BP"),
+        ("BP Expédition", 14.0, 18.0, "BP"),
+        ("BP Logistique", 14.0, 18.0, "BP"),
+        ("BP Direction", 14.0, 18.0, "BP"),
+        ("BP Finance", 14.0, 18.0, "BP"),
+        # Spécialisations Bac Pro
+        ("Bac Pro Électrotechnique", 13.5, 18.0, "Bac Pro"),
+        ("Bac Pro Chaîne Assemblage", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Scierie", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Métallurgie", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Fonderie", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Fabrication", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Assemblage", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro RH", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Expédition", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Logistique", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Direction", 13.0, 17.0, "Bac Pro"),
+        ("Bac Pro Finance", 13.0, 17.0, "Bac Pro"),
+    ],
+    5: [
+        # Bases
+        ("BTS", 15.0, 22.0),
+        ("DUT", 15.5, 22.0),
+        # Spécialisations
+        ("DUT Chaîne Assemblage", 15.5, 22.0, "DUT"),
+        ("DUT Scierie", 15.5, 22.0, "DUT"),
+        ("DUT Métallurgie", 15.5, 22.0, "DUT"),
+        ("DUT Fonderie", 15.5, 22.0, "DUT"),
+        ("DUT Fabrication", 15.5, 22.0, "DUT"),
+        ("DUT Assemblage", 15.5, 22.0, "DUT"),
+        ("DUT RH", 15.5, 22.0, "DUT"),
+        ("DUT Expédition", 15.5, 22.0, "DUT"),
+        ("DUT Logistique", 15.5, 22.0, "DUT"),
+        ("DUT Direction", 15.5, 22.0, "DUT"),
+        ("DUT Finance", 15.5, 22.0, "DUT"),
+        ("BTS Électrotechnique", 15.5, 23.0, "BTS"),
+        ("BTS Chaîne Assemblage", 15.0, 22.0, "BTS"),
+        ("BTS Scierie", 15.0, 22.0, "BTS"),
+        ("BTS Métallurgie", 15.0, 22.0, "BTS"),
+        ("BTS Fonderie", 15.0, 22.0, "BTS"),
+        ("BTS Fabrication", 15.0, 22.0, "BTS"),
+        ("BTS Assemblage", 15.0, 22.0, "BTS"),
+        ("BTS RH", 15.0, 22.0, "BTS"),
+        ("BTS Expédition", 15.0, 22.0, "BTS"),
+        ("BTS Logistique", 15.0, 22.0, "BTS"),
+        ("BTS Direction", 15.0, 22.0, "BTS"),
+        ("BTS Finance", 15.0, 22.0, "BTS"),
+    ],
+    6: [
+        # Bases
+        ("Licence Pro", 18.0, 24.0),
+        ("BUT", 18.5, 25.0),
+        ("Licence", 18.0, 23.5),
+        # Spécialisations Licence Pro
+        ("Licence Pro Chaîne Assemblage", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Scierie", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Métallurgie", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Fonderie", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Fabrication", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Assemblage", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro RH", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Expédition", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Logistique", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Direction", 18.0, 24.0, "Licence Pro"),
+        ("Licence Pro Finance", 18.0, 24.0, "Licence Pro"),
+        # Spécialisations BUT
+        ("BUT Chaîne Assemblage", 18.5, 25.0, "BUT"),
+        ("BUT Scierie", 18.5, 25.0, "BUT"),
+        ("BUT Métallurgie", 18.5, 25.0, "BUT"),
+        ("BUT Fonderie", 18.5, 25.0, "BUT"),
+        ("BUT Fabrication", 18.5, 25.0, "BUT"),
+        ("BUT Assemblage", 18.5, 25.0, "BUT"),
+        ("BUT RH", 18.5, 25.0, "BUT"),
+        ("BUT Expédition", 18.5, 25.0, "BUT"),
+        ("BUT Logistique", 18.5, 25.0, "BUT"),
+        ("BUT Direction", 18.5, 25.0, "BUT"),
+        ("BUT Finance", 18.5, 25.0, "BUT"),
+        # Spécialisations Licence
+        ("Licence Pro Métiers de l'Électricité", 18.5, 25.0, "Licence"),
+        ("Licence Chaîne Assemblage", 18.0, 23.5, "Licence"),
+        ("Licence Scierie", 18.0, 23.5, "Licence"),
+        ("Licence Métallurgie", 18.0, 23.5, "Licence"),
+        ("Licence Fonderie", 18.0, 23.5, "Licence"),
+        ("Licence Fabrication", 18.0, 23.5, "Licence"),
+        ("Licence Assemblage", 18.0, 23.5, "Licence"),
+        ("Licence RH", 18.0, 23.5, "Licence"),
+        ("Licence Expédition", 18.0, 23.5, "Licence"),
+        ("Licence Logistique", 18.0, 23.5, "Licence"),
+        ("Licence Direction", 18.0, 23.5, "Licence"),
+        ("Licence Finance", 18.0, 23.5, "Licence"),
+    ],
+    7: [
+        # Bases
+        ("Master", 22.0, 30.0),
+        ("Ingénieur", 24.0, 35.0),
+        # Spécialisations
+        ("Ingénieur Chaîne Assemblage", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Scierie", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Métallurgie", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Fonderie", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Fabrication", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Assemblage", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur RH", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Expédition", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Logistique", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Direction", 24.0, 35.0, "Ingénieur"),
+        ("Ingénieur Finance", 24.0, 35.0, "Ingénieur"),
+        ("Master Énergétique et Électrique", 23.0, 32.0, "Master"),
+        ("Master Chaîne Assemblage", 22.0, 30.0, "Master"),
+        ("Master Scierie", 22.0, 30.0, "Master"),
+        ("Master Métallurgie", 22.0, 30.0, "Master"),
+        ("Master Fonderie", 22.0, 30.0, "Master"),
+        ("Master Fabrication", 22.0, 30.0, "Master"),
+        ("Master Assemblage", 22.0, 30.0, "Master"),
+        ("Master RH", 22.0, 30.0, "Master"),
+        ("Master Expédition", 22.0, 30.0, "Master"),
+        ("Master Logistique", 22.0, 30.0, "Master"),
+        ("Master Direction", 22.0, 30.0, "Master"),
+        ("Master Finance", 22.0, 30.0, "Master"),
+    ],
+    8: [
+        # Bases
+        ("Doctorat", 28.0, 40.0),
+        # Spécialisations Doctorat
+        ("Doctorat en Génie Électrique", 29.0, 42.0, "Doctorat"),
+        ("Doctorat Chaîne Assemblage", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Scierie", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Métallurgie", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Fonderie", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Fabrication", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Assemblage", 28.0, 40.0, "Doctorat"),
+        ("Doctorat RH", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Expédition", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Logistique", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Direction", 28.0, 40.0, "Doctorat"),
+        ("Doctorat Finance", 28.0, 40.0, "Doctorat"),
+    ],
 }
 
-# -----------------------
-# VOLUMÉTRIE
-# -----------------------
 N_EMP = 50
 N_QUALIF = 50
 N_USINES = 15
@@ -280,6 +451,15 @@ MONTH_NOW = dt.date.today().month
 # RECETTES DE PRODUITS
 # Format: (nom_produit, gamme, type_usine)
 # -----------------------
+# create object product
+class Product:
+    def __init__(self, name, gamme, type_usine):
+        self.name = name
+        self.gamme = gamme
+        self.type_usine = type_usine
+        self.recettes = []
+
+
 RECETTES_PRODUITS = [
     # Produits de chaine assemblage
     ("Tondeuse électrique", "jardin et piscine", "chaine assemblage"),
