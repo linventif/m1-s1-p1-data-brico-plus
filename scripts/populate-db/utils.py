@@ -9,17 +9,26 @@ import os
 import csv
 
 from config import CALENDRIER_DATE_DEBUT, CALENDRIER_DATE_FIN
-def genCalendrier(start_year=CALENDRIER_DATE_DEBUT, end_year=CALENDRIER_DATE_FIN, split=False):
+
+def genCalendrier(start_year=CALENDRIER_DATE_DEBUT, end_year=CALENDRIER_DATE_FIN, split=False, format="%Y-%m-%d"):
     from datetime import datetime, timedelta
 
+    # Always parse input as '%Y-%m-%d', regardless of output format
     start_date = datetime.strptime(start_year, "%Y-%m-%d")
     end_date = datetime.strptime(end_year, "%Y-%m-%d")
 
     delta = end_date - start_date
 
-    # if slit false returna list of string date format YYYY-MM-DD
     if not split:
-        return [(start_date + timedelta(days=i)).date() for i in range(delta.days + 1)]
+        # Output format argument only affects string formatting if needed
+        if format == "%Y-%m-%d":
+            return [(start_date + timedelta(days=i)).date() for i in range(delta.days + 1)]
+        elif format == "%Y":
+            # Return list of datetime objects for each day, but caller should extract .year
+            return [(start_date + timedelta(days=i)).date() for i in range(delta.days + 1)]
+        else:
+            # For other formats, return formatted strings
+            return [(start_date + timedelta(days=i)).strftime(format) for i in range(delta.days + 1)]
     else:
         # return a list of tuples (month, year)
         months_years = set()
@@ -27,10 +36,6 @@ def genCalendrier(start_year=CALENDRIER_DATE_DEBUT, end_year=CALENDRIER_DATE_FIN
             current_date = start_date + timedelta(days=i)
             months_years.add((current_date.month, current_date.year))
         return list(months_years)
-    
-
-    # test
-    print(genCalendrier())
 
 def getRandomPhone():
     return random.choice(["01", "02", "03", "04", "05", "09"]) + "".join(random.choices(string.digits, k=8))

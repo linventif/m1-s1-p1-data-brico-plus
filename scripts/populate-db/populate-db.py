@@ -14,12 +14,8 @@ from config import USER, HOST, PORT, SERVICE
 random.seed(31)
 
 def main():
-    cal = genCalendrier()
-    print(cal)
-
     with get_connection() as con:
         cur = con.cursor()
-
         clear_all_data(cur)
 
         # typeu = gen_typeu()
@@ -30,10 +26,15 @@ def main():
         # gammes = gen_gammes()
         # cur.executemany("INSERT INTO GAMME(CODEG, NOMG) VALUES (:1,:2)", gammes)
 
-        # cur.executemany("INSERT INTO CALENDRIER1(DATEFAB) VALUES (:1)", cal1)
-        # cur.executemany("INSERT INTO CALENDRIER2(DATEDEBUTDIR) VALUES (:1)", cal2)
-        # cur.executemany("INSERT INTO CALENDRIER3(MOIS, ANNEE) VALUES (:1,:2)", cal3_rows)
-        # cur.executemany("INSERT INTO CALENDRIER4(ANNEE) VALUES (:1)", cal4_rows)
+        cal_yyyy_mm_dd = genCalendrier()
+        cal_yyyy_mm_dd = [(d,) for d in cal_yyyy_mm_dd]
+        cal_yyyy = genCalendrier(format="%Y")
+        cal_yyyy = list(set([(d.year,) for d in cal_yyyy]))
+        cal_split = genCalendrier(split=True)
+        cur.executemany("INSERT INTO CALENDRIER1(DATEFAB) VALUES (:1)", cal_yyyy_mm_dd)
+        cur.executemany("INSERT INTO CALENDRIER2(DATEDEBUTDIR) VALUES (:1)", cal_yyyy_mm_dd)
+        cur.executemany("INSERT INTO CALENDRIER3(MOIS, ANNEE) VALUES (:1,:2)", cal_split)
+        cur.executemany("INSERT INTO CALENDRIER4(ANNEE) VALUES (:1)", cal_yyyy)
 
         # usines = gen_usines()
         # cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
