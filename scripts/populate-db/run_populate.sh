@@ -20,11 +20,17 @@ fi
 # Cherche le .env à la racine du projet ou dans le dossier courant
 if [[ -f "${HERE}/${ENV_FILE}" ]]; then
   ENV_PATH="${HERE}/${ENV_FILE}"
+elif [[ -f "${HERE}/../${ENV_FILE}" ]]; then
+  ENV_PATH="${HERE}/../${ENV_FILE}"
 elif [[ -f "${HERE}/../../${ENV_FILE}" ]]; then
   ENV_PATH="${HERE}/../../${ENV_FILE}"
+elif [[ -f "$(dirname "${HERE}")/${ENV_FILE}" ]]; then
+  ENV_PATH="$(dirname "${HERE}")/${ENV_FILE}"
+elif [[ -f "$(git rev-parse --show-toplevel 2>/dev/null)/${ENV_FILE}" ]]; then
+  ENV_PATH="$(git rev-parse --show-toplevel 2>/dev/null)/${ENV_FILE}"
 else
   echo "❌ Fichier .env manquant: ${ENV_FILE}"
-  echo "Cherché dans ${HERE} et ${HERE}/../.."
+  echo "Cherché dans ${HERE}, ${HERE}/.., ${HERE}/../.., projet racine"
   echo "Crée un .env (voir .env.example) puis relance."
   exit 1
 fi

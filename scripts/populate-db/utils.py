@@ -8,6 +8,30 @@ import string
 import os
 import csv
 
+from config import CALENDRIER_DATE_DEBUT, CALENDRIER_DATE_FIN
+def genCalendrier(start_year=CALENDRIER_DATE_DEBUT, end_year=CALENDRIER_DATE_FIN, split=False):
+    from datetime import datetime, timedelta
+
+    start_date = datetime.strptime(start_year, "%Y-%m-%d")
+    end_date = datetime.strptime(end_year, "%Y-%m-%d")
+
+    delta = end_date - start_date
+
+    # if slit false returna list of string date format YYYY-MM-DD
+    if not split:
+        return [(start_date + timedelta(days=i)).date() for i in range(delta.days + 1)]
+    else:
+        # return a list of tuples (month, year)
+        months_years = set()
+        for i in range(delta.days + 1):
+            current_date = start_date + timedelta(days=i)
+            months_years.add((current_date.month, current_date.year))
+        return list(months_years)
+    
+
+    # test
+    print(genCalendrier())
+
 def getRandomPhone():
     return random.choice(["01", "02", "03", "04", "05", "09"]) + "".join(random.choices(string.digits, k=8))
 
@@ -34,6 +58,16 @@ def getRandomStreet():
         raise ValueError(f"No valid address lines found in {path}. Please execute get-and-extract.sh before trying to generate data.")
 
     numero, nom_voie, code_postal, nom_commune = [c.strip() for c in random.choice(rows)]
+
+    # cut to 50char
+    nom_voie = nom_voie[:50]
+    code_postal = code_postal[:50]
+    nom_commune = nom_commune[:50]
+
+    # check everything exit and not null or empty log and retry itself
+    if not numero or not nom_voie or not code_postal or not nom_commune:
+        print(f"Missing data for address: {numero}, {nom_voie}, {code_postal}, {nom_commune}")
+        return getRandomStreet()
 
     # merge numero with nom_voie when numero is present
     if numero and numero not in ("", "-", "0"):
@@ -139,5 +173,3 @@ def getRandomFullName():
         "last_name": last_name,
         "full_name": f"{first_name} {last_name}"
     }
-
-print(getRandomFullName())
