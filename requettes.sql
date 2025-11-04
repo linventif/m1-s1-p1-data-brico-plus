@@ -12,7 +12,7 @@ WHERE NOT EXISTS (
   WHERE p.CodeG = g.CodeG
     AND v.CodeP = p.CodeP
     AND pv.CodePV = v.CodePV
-    AND LOWER(pv.TypePV) = 'brico-express'
+    AND LOWER(pv.TypePV) = 'type brico-express'
 );
 
 -- Requête de vérification :
@@ -556,12 +556,9 @@ WHERE
 --------------------------------------------------------------------------------
 -- 8️⃣  Point de vente ayant vendu cette année tous les produits de la gamme Cuisine
 --------------------------------------------------------------------------------
--- Sélectionner le nom et le type des points de vente
 SELECT pv.NomPV, pv.TypePV, pv.CODEPV
+--Liste des points de ventes, pour lesquelles il n'existe pas de produits qui n'ont pas été vendus de la gamme cuisine
 FROM POINTS_DE_VENTE pv
--- Garder uniquement les points de vente
--- pour lesquels il n’existe aucun produit de la gamme "cuisine"
--- non vendu durant l’année en cours
 WHERE NOT EXISTS (
   SELECT *
   FROM PRODUITS p, GAMME g
@@ -780,25 +777,66 @@ ORDER BY
     NbPdtNonVendus DESC;
 
 --------------------------------------------------------------------------------
--- 🆕 Requête en plus // Détection des anomalies sur les prix unitaires des produits (méthode IQR)
+-- Requête en plus 1 // Détection des anomalies sur les salaires (méthode IQR)
 --------------------------------------------------------------------------------
-WITH stats AS (
+WITH salaires AS (
     SELECT
-        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY PrixUnitP) AS q1,
-        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY PrixUnitP) AS q3,
-        (PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY PrixUnitP)
-        - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY PrixUnitP)) AS iqr
-    FROM FACTURER
+        t.CODEE,
+        t.ANNEE,
+        t.MOIS,
+        (p1.FIXEMENSUELE * p1.INDICESALE) AS salaire_mensuel
+    FROM
+        PAYER1 p1,
+        TRAVAILLER_USINE t
+    WHERE
+        p1.CODEE = t.CODEE
+        AND p1.ANNEE = t.ANNEE
+),
+stats AS (
+    SELECT
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salaire_mensuel) AS q1,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salaire_mensuel) AS q3,
+        ( PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salaire_mensuel)
+        - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salaire_mensuel) ) AS iqr
+    FROM salaires
 )
 SELECT
-    f.CodeP,
-    f.Mois,
-    f.Annee,
-    f.PrixUnitP
-FROM FACTURER f, stats s
-WHERE f.PrixUnitP < (s.q1 - 1.5 * s.iqr)
-   OR f.PrixUnitP > (s.q3 + 1.5 * s.iqr)
-ORDER BY f.PrixUnitP DESC;
+    sals.CODEE,
+    sals.ANNEE,
+    sals.MOIS,
+    sals.salaire_mensuel
+FROM
+    salaires sals,
+    stats st
+WHERE
+    sals.salaire_mensuel < (st.q1 - 1.5 * st.iqr)
+    OR sals.salaire_mensuel > (st.q3 + 1.5 * st.iqr)
+ORDER BY
+    sals.salaire_mensuel DESC;
+
+
+--------------------------------------------------------------------------------
+-- Requête en plus 2 // Statistiques descriptives sur les salaires
+--------------------------------------------------------------------------------
+SELECT
+    t.Annee,
+    t.Mois,
+    MIN(p1.FixeMensuelE * p1.IndiceSalE)                   AS min_salaire,
+    MAX(p1.FixeMensuelE * p1.IndiceSalE)                   AS max_salaire,
+    ROUND(AVG(p1.FixeMensuelE * p1.IndiceSalE), 2)         AS moyenne_salaire,
+    ROUND(STDDEV(p1.FixeMensuelE * p1.IndiceSalE), 2)      AS ecart_type_salaire,
+    ROUND(VARIANCE(p1.FixeMensuelE * p1.IndiceSalE), 2)    AS variance_salaire
+FROM
+    PAYER1 p1,
+    TRAVAILLER_USINE t
+WHERE
+    p1.CodeE = t.CodeE
+GROUP BY
+    t.Annee,
+    t.Mois
+ORDER BY
+    t.Annee,
+    t.Mois;
 
 
 --------------------------------------------------------------------------------
@@ -813,21 +851,4 @@ SELECT
 FROM user_tables t
 ORDER BY t.table_name;
 
-
---------------------------------------------------------------------------------
--- Moyenne mensuelle des salaires par année
---------------------------------------------------------------------------------
-SELECT
-    t.ANNEE,
-    t.MOIS,
-    ROUND(AVG(p1.FIXEMENSUELE * p1.INDICESALE), 2) AS Moyenne_Salaire_Mensuel
-FROM
-    PAYER1 p1,
-    TRAVAILLER_USINE t
-WHERE
-    p1.CODEE = t.CODEE
-GROUP BY
-    t.ANNEE, t.MOIS
-ORDER BY
-    t.ANNEE, t.MOIS;
 
