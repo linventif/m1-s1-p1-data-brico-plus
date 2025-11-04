@@ -9,4 +9,4 @@ __pycache__
 *.tgz
 *.bz2
 *.xz
-*adresses*.csv
+*.csv

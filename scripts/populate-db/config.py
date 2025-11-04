@@ -44,3 +44,10 @@ PORT = int(os.getenv("ORACLE_PORT"))
 SERVICE = os.getenv("ORACLE_SERVICE")
 USER = os.getenv("ORACLE_USER")
 PASS = os.getenv("ORACLE_PASS")
+
+# Configurations de génération de données
+NOMBRE_EMPLOYES_PAR_USINE = int(os.getenv("NOMBRE_EMPLOYES_PAR_USINE", "10"))
+NOMBRE_EMPLOYES_PAR_POINT_VENTE = int(os.getenv("NOMBRE_EMPLOYES_PAR_POINT_VENTE", "5"))
+NOMBRE_USINES = int(os.getenv("NOMBRE_USINES", "15"))
+NOMBRE_POINTS_VENTE = int(os.getenv("NOMBRE_POINTS_VENTE", "50"))
+NOMBRE_PRODUITS = int(os.getenv("NOMBRE_PRODUITS", "100"))
