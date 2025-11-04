@@ -830,3 +830,4 @@ GROUP BY
     t.ANNEE, t.MOIS
 ORDER BY
     t.ANNEE, t.MOIS;
+
