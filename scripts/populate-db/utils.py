@@ -37,8 +37,35 @@ def genCalendrier(start_year=CALENDRIER_DATE_DEBUT, end_year=CALENDRIER_DATE_FIN
             months_years.add((current_date.month, current_date.year))
         return list(months_years)
 
-def getRandomPhone():
-    return random.choice(["01", "02", "03", "04", "05", "09"]) + "".join(random.choices(string.digits, k=8))
+def getRandomPhone(type="pro"):
+    stat = {
+        "pro": {
+            "l": 0.5,
+            "m": 0.1,
+            "s": 0.1,
+            "o": 0.3
+        },
+        "perso": {
+            "l": 0.15,
+            "m": 0.75,
+            "s": 0.05,
+            "o": 0.05
+        },
+    }
+    # Valid French prefixes: 01-05 (landlines), 06-07 (mobiles), 08 (service), 09 (VoIP)
+    # prefix = random.choice(["01", "02", "03", "04", "05", "06", "07", "08", "09"])
+    prefixes = []
+    for ptype, prob in stat.get(type, {}).items():
+        if ptype == "l":  # landline
+            prefixes.extend(["01", "02", "03", "04", "05"] * int(prob * 100))
+        elif ptype == "m":  # mobile
+            prefixes.extend(["06", "07"] * int(prob * 100))
+        elif ptype == "s":  # service
+            prefixes.extend(["08"] * int(prob * 100))
+        elif ptype == "o":  # VoIP
+            prefixes.extend(["09"] * int(prob * 100))
+    prefix = random.choice(prefixes)
+    return prefix + "".join(random.choices(string.digits, k=8))
 
 def getRandomStreet():
     path = "./data/adresses/adresses-france-extract.csv"

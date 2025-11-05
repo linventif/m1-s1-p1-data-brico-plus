@@ -17,7 +17,7 @@ def gen_employes(n=NOMBRE_EMPLOYES_PAR_USINE * NOMBRE_USINES + NOMBRE_POINTS_VEN
         rows.append((
             fullname["last_name"], fullname["first_name"], streetPerso["street"], streetPerso["postal_code"], streetPerso["city"],
             streetPro["street"], streetPro["postal_code"], streetPro["city"],
-            getRandomPhone(), getRandomPhone()
+            getRandomPhone("perso"), getRandomPhone("perso")
         ))
     return rows
 
@@ -40,7 +40,7 @@ def gen_usines(n=NOMBRE_USINES):
     for code in range(1, n+1):
         street_info = getRandomStreet()
         nom_usine = f"Usine {street_info['city']}"
-        rows.append((nom_usine, street_info['street'], street_info['postal_code'], street_info['city'], getRandomPhone()))
+        rows.append((nom_usine, street_info['street'], street_info['postal_code'], street_info['city'], getRandomPhone("pro")))
     return rows
 
 def gen_typeu():
@@ -117,16 +117,18 @@ def gen_gammes():
 
 #     return rows, adresses_utilisees
 
-# def gen_points_vente(n=N_PV):
-#     rows = []
-#     for code in range(1, n+1):
-#         city, cp = pick_city(True)
-#         nompv = random.choices(PV_TYPES, weights=[0.6, 0.4])[0]
-#         rows.append((
-#             nompv,
-#             street(), cp, city, phone(hg=cp.startswith("31")),
-#             f"Type {nompv}"))
-#     return rows
+def gen_points_vente(n=NOMBRE_POINTS_VENTE):
+    rows = []
+    for code in range(1, n+1):
+        street_info = getRandomStreet()
+        type_pv = random.choices(PV_TYPES, weights=[0.6, 0.4])[0]
+        nom_pv = random.choice(PV_NAMES[type_pv])
+        rows.append((
+            nom_pv, street_info['street'], street_info['postal_code'], street_info['city'],
+            getRandomPhone("pro"),
+            type_pv
+        ))
+    return rows
 
 # def gen_produits(n=N_PRODUITS):
 #     """Génère des produits réalistes à partir des recettes"""

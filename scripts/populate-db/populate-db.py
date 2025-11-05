@@ -17,7 +17,6 @@ def main():
     with get_connection() as con:
         cur = con.cursor()
 
-
         # '''
         clear_all_data(cur)
 
@@ -85,12 +84,12 @@ def main():
         departements_ids = [row[0] for row in cur.fetchall()]
         # '''
 
-        # pvs = gen_points_vente()
-        # cur.executemany("""INSERT INTO POINTS_DE_VENTE
-        #                    (NOMPV,RUEPV,CPOSTALPV,VILLEPV,TELPV,TYPEPV)
-        #                    VALUES (:1,:2,:3,:4,:5,:6)""", pvs)
-        # cur.execute("SELECT CODEPV FROM POINTS_DE_VENTE ORDER BY CODEPV")
-        # pvs_ids = [row[0] for row in cur.fetchall()]
+        pvs = gen_points_vente()
+        cur.executemany("""INSERT INTO POINTS_DE_VENTE
+                           (NOMPV,RUEPV,CPOSTALPV,VILLEPV,TELPV,TYPEPV)
+                           VALUES (:1,:2,:3,:4,:5,:6)""", pvs)
+        cur.execute("SELECT CODEPV FROM POINTS_DE_VENTE ORDER BY CODEPV")
+        pvs_ids = [row[0] for row in cur.fetchall()]
 
         # produits = gen_produits()
         # cur.executemany("""INSERT INTO PRODUITS(NOMP,MARQUEP,CODEG) VALUES (:1,:2,:3)""", produits)

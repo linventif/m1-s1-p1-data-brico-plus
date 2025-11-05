@@ -18,10 +18,7 @@ PV_NAMES = {
         "Brico Centre", "Entrepôt du Bricolage", "Brico Arche", "King Jouet Bricolage"
     ],
     "Brico-Express": [
-        "Brico Minute", "Brico Shop", "Brico Corner", "Express Bricolage",
-        "Brico Plus", "Quick Brico", "Brico Service", "Brico Direct",
-        "Brico Rapide", "Brico Point", "Allo Brico", "Brico Store",
-        "Brico Facile", "Flash Brico", "Brico Express +", "Top Brico"
+        "Brico Express"
     ]
 }
 
