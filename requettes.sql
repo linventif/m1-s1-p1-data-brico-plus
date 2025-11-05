@@ -365,7 +365,7 @@ ORDER BY p.CodeP, pv.CPostalPV, u.CPostalU;
 --------------------------------------------------------------------------------
 -- 6️⃣  Pour les deux dernières années, salaires mensuels des employés
 --------------------------------------------------------------------------------
-SELECT e.NomE, e.PrenomE, m.Annee, m.Mois, p1.FixeMensuelE + p1.IndiceSalE * NVL(hu.H_u, 0) + p1.IndiceSalE * NVL(hpv.H_pv, 0) + NVL(v.CA_retro, 0)  AS SalaireMensuelEmploye
+SELECT e.codeE, e.NomE, e.PrenomE, m.Annee, m.Mois, p1.FixeMensuelE + p1.IndiceSalE * NVL(hu.H_u, 0) + p1.IndiceSalE * NVL(hpv.H_pv, 0) + NVL(v.CA_retro, 0)  AS SalaireMensuelEmploye
 FROM Employes e,
      /* Ensemble des (CodeE, Mois, Annee) à considérer (heures ou ventes) */
      ( SELECT CodeE, Mois, Annee FROM Travailler_Usine
@@ -425,11 +425,23 @@ SELECT
     e.PrenomE,
     m.Annee,
     m.Mois,
-    p1.FixeMensuelE,
-    p1.IndiceSalE,
-    NVL(hu.H_u, 0)   AS Heures_Usine,
-    NVL(hpv.H_pv, 0) AS Heures_PV,
-    NVL(v.CA_retro, 0) AS CA_Retrocession
+
+    /* 1. partie fixe */
+    p1.FixeMensuelE                                 AS Partie_Fixe,
+
+    /* 2. partie travail (usine + point de vente) */
+    (p1.IndiceSalE * NVL(hu.H_u, 0))                AS Partie_Travail_Usine,
+    (p1.IndiceSalE * NVL(hpv.H_pv, 0))              AS Partie_Travail_PV,
+
+    /* 3. partie objectifs / rétrocession */
+    NVL(v.CA_retro, 0)                              AS Partie_Objectifs,
+
+    /* salaire total = somme des 3 blocs */
+    p1.FixeMensuelE
+      + (p1.IndiceSalE * NVL(hu.H_u, 0))
+      + (p1.IndiceSalE * NVL(hpv.H_pv, 0))
+      + NVL(v.CA_retro, 0)                          AS Salaire_Mensuel_Employe
+
 FROM EMPLOYES e,
      /* même ensemble (CodeE, Mois, Annee) que dans la requête principale */
      ( SELECT CodeE, Mois, Annee FROM Travailler_Usine
@@ -439,7 +451,7 @@ FROM EMPLOYES e,
        SELECT CodeE, Mois, Annee FROM Vendre
      ) m,
      /* paramètres annuels (fixe + indice) */
-     Payer1 p1,
+     PAYER1 p1,
      /* heures en usine */
      ( SELECT CodeE, Mois, Annee, SUM(NbHeures_U) AS H_u
        FROM Travailler_Usine
@@ -478,9 +490,14 @@ WHERE m.CodeE = e.CodeE
   AND v.Mois(+)  = m.Mois
   AND v.Annee(+) = m.Annee
 
-  -- même filtre que la requête principale : les 2 dernières années
+  -- même filtre que ta requête principale
   AND m.Annee IN (EXTRACT(YEAR FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE)-1)
-ORDER BY m.Annee, e.NomE, e.PrenomE, m.Mois;
+
+ORDER BY
+    m.Annee,
+    e.NomE,
+    e.PrenomE,
+    m.Mois;
 
 
 
@@ -780,14 +797,10 @@ ORDER BY
 -- Requête en plus 1 // Détection des anomalies sur les salaires (méthode IQR)
 --------------------------------------------------------------------------------
 WITH salaires AS (
-    SELECT
-        t.CODEE,
-        t.ANNEE,
-        t.MOIS,
+    SELECT t.CODEE, t.ANNEE, t.MOIS,
         (p1.FIXEMENSUELE * p1.INDICESALE) AS salaire_mensuel
     FROM
-        PAYER1 p1,
-        TRAVAILLER_USINE t
+        PAYER1 p1, TRAVAILLER_USINE t
     WHERE
         p1.CODEE = t.CODEE
         AND p1.ANNEE = t.ANNEE
@@ -816,27 +829,49 @@ ORDER BY
 
 
 --------------------------------------------------------------------------------
--- Requête en plus 2 // Statistiques descriptives sur les salaires
+-- Requête en plus 2 // Statistiques descriptives sur les salaires et fenêtrage par employé (Agrégation avancée)
 --------------------------------------------------------------------------------
 SELECT
     t.Annee,
     t.Mois,
-    MIN(p1.FixeMensuelE * p1.IndiceSalE)                   AS min_salaire,
-    MAX(p1.FixeMensuelE * p1.IndiceSalE)                   AS max_salaire,
-    ROUND(AVG(p1.FixeMensuelE * p1.IndiceSalE), 2)         AS moyenne_salaire,
-    ROUND(STDDEV(p1.FixeMensuelE * p1.IndiceSalE), 2)      AS ecart_type_salaire,
-    ROUND(VARIANCE(p1.FixeMensuelE * p1.IndiceSalE), 2)    AS variance_salaire
+    p1.CodeE,
+    -- salaire de CET employé ce mois-là
+    (p1.FixeMensuelE * p1.IndiceSalE) AS salaire_employe,
+
+    -- stats du mois (fenêtrage)
+    MIN(p1.FixeMensuelE * p1.IndiceSalE)
+        OVER (PARTITION BY t.Annee, t.Mois) AS min_salaire_mois,
+
+    MAX(p1.FixeMensuelE * p1.IndiceSalE)
+        OVER (PARTITION BY t.Annee, t.Mois) AS max_salaire_mois,
+
+    ROUND(
+        AVG(p1.FixeMensuelE * p1.IndiceSalE)
+        OVER (PARTITION BY t.Annee, t.Mois),
+        2
+    ) AS moyenne_salaire_mois,
+
+    ROUND(
+        STDDEV(p1.FixeMensuelE * p1.IndiceSalE)
+        OVER (PARTITION BY t.Annee, t.Mois),
+        2
+    ) AS ecart_type_salaire_mois,
+
+    ROUND(
+        VARIANCE(p1.FixeMensuelE * p1.IndiceSalE)
+        OVER (PARTITION BY t.Annee, t.Mois),
+        2
+    ) AS variance_salaire_mois
+
 FROM
     PAYER1 p1,
     TRAVAILLER_USINE t
 WHERE
     p1.CodeE = t.CodeE
-GROUP BY
-    t.Annee,
-    t.Mois
 ORDER BY
     t.Annee,
-    t.Mois;
+    t.Mois,
+    p1.CodeE;
 
 
 --------------------------------------------------------------------------------
@@ -852,3 +887,277 @@ FROM user_tables t
 ORDER BY t.table_name;
 
 
+------------------------------------------------------
+--Requête d'extraction de données pour analyse salaire
+------------------------------------------------------
+
+WITH m AS (
+    /* tous les (employé, mois, année) où il s'est passé quelque chose */
+    SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_USINE
+    UNION
+    SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_PT_VENTE
+    UNION
+    SELECT CODEE, MOIS, ANNEE FROM VENDRE
+),
+/* heures totales en usine */
+hu AS (
+    SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_U) AS H_U
+    FROM TRAVAILLER_USINE
+    GROUP BY CODEE, MOIS, ANNEE
+),
+/* heures totales en point de vente */
+hpv AS (
+    SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_PV) AS H_PV
+    FROM TRAVAILLER_PT_VENTE
+    GROUP BY CODEE, MOIS, ANNEE
+),
+/* rétro sur les ventes du mois */
+v AS (
+    SELECT
+        ve.CODEE,
+        ve.MOIS,
+        ve.ANNEE,
+        SUM(p2.INDICERETROCESSIONG * ve.QTE_VENDUE * f.PRIXUNITP) AS CA_retro
+    FROM VENDRE ve, FACTURER f, PRODUITS p, PAYER2 p2
+    WHERE f.CODEP = ve.CODEP
+      AND f.MOIS  = ve.MOIS
+      AND f.ANNEE = ve.ANNEE
+      AND p.CODEP = ve.CODEP
+      AND p2.CODEG = p.CODEG
+      AND p2.ANNEE = ve.ANNEE
+    GROUP BY ve.CODEE, ve.MOIS, ve.ANNEE
+)
+SELECT
+    /* temps + employé */
+    m.ANNEE,
+    m.MOIS,
+    e.CODEE,
+    e.NOME,
+    e.PRENOME,
+
+    /* adresses utiles pour analyse (perso / pro) */
+    e.CPOSTALPERSE,
+    e.VILLEPERSE,
+    e.CPOSTALPROE,
+    e.VILLEPROE,
+
+    /* qualifications (via POSSEDER) */
+    q.CODEQ,
+    q.NOMQ,
+    q.TAUXMINQ,
+
+    /* paie de l'année */
+    p1.FIXEMENSUELE,
+    p1.INDICESALE,
+
+    /* heures du mois */
+    NVL(hu.H_U, 0)  AS HEURES_USINE,
+    NVL(hpv.H_PV, 0) AS HEURES_PV,
+
+    /* rétro du mois */
+    NVL(v.CA_retro, 0) AS CA_RETRO,
+
+    /* direction de département (facultatif) */
+    dpt.CODED       AS CODE_DEPT_DIRIGE,
+    dpt.NOMD        AS NOM_DEPT_DIRIGE,
+    dir.DATEDEBUTDIR,
+
+    /* responsabilité de gamme (facultatif) */
+    r.CODEG         AS CODE_GAMME_RESP,
+    g.NOMG          AS NOM_GAMME_RESP,
+
+    /* >>> salaire mensuel calculé selon ta formule <<< */
+    p1.FIXEMENSUELE
+      + p1.INDICESALE * NVL(hu.H_U, 0)
+      + p1.INDICESALE * NVL(hpv.H_PV, 0)
+      + NVL(v.CA_retro, 0)            AS SALAIRE_MENSUEL_EMPLOYE
+
+FROM
+    m,
+    EMPLOYES e,
+    PAYER1 p1,
+    POSSEDER pos,
+    QUALIFICATIONS q,
+    hu,
+    hpv,
+    v,
+    DIRIGER dir,
+    DEPARTEMENTS dpt,
+    RESPONSABLE r,
+    GAMME g
+WHERE
+    /* base */
+    m.CODEE = e.CODEE
+    AND p1.CODEE = e.CODEE
+    AND p1.ANNEE = m.ANNEE
+
+    /* qualification (peut y en avoir plusieurs) */
+    AND pos.CODEE(+) = e.CODEE
+    AND q.CODEQ(+)   = pos.CODEQ
+
+    /* heures */
+    AND hu.CODEE(+) = m.CODEE
+    AND hu.MOIS(+)  = m.MOIS
+    AND hu.ANNEE(+) = m.ANNEE
+
+    AND hpv.CODEE(+) = m.CODEE
+    AND hpv.MOIS(+)  = m.MOIS
+    AND hpv.ANNEE(+) = m.ANNEE
+
+    /* ventes / rétro */
+    AND v.CODEE(+) = m.CODEE
+    AND v.MOIS(+)  = m.MOIS
+    AND v.ANNEE(+) = m.ANNEE
+
+    /* direction d'un département sur l'année du mois */
+    AND dir.CODEE(+) = e.CODEE
+    AND dpt.CODED(+) = dir.CODED
+    AND (dir.DATEDEBUTDIR IS NULL
+         OR EXTRACT(YEAR FROM dir.DATEDEBUTDIR) <= m.ANNEE)
+
+    /* responsable de gamme sur l'année */
+    AND r.CODEE(+) = e.CODEE
+    AND r.ANNEE(+) = m.ANNEE
+    AND g.CODEG(+) = r.CODEG
+
+ORDER BY
+    m.ANNEE,
+    m.MOIS,
+    e.NOME,
+    e.PRENOME;
+
+
+
+
+
+
+--Requête extraction v2
+
+WITH m AS (
+    /* tous les (employé, mois, année) où il s'est passé quelque chose */
+    SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_USINE
+    UNION
+    SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_PT_VENTE
+    UNION
+    SELECT CODEE, MOIS, ANNEE FROM VENDRE
+),
+/* heures totales en usine */
+hu AS (
+    SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_U) AS H_U
+    FROM TRAVAILLER_USINE
+    GROUP BY CODEE, MOIS, ANNEE
+),
+/* heures totales en point de vente */
+hpv AS (
+    SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_PV) AS H_PV
+    FROM TRAVAILLER_PT_VENTE
+    GROUP BY CODEE, MOIS, ANNEE
+),
+/* partie objectifs = rétro sur les ventes du mois */
+v AS (
+    SELECT
+        ve.CODEE,
+        ve.MOIS,
+        ve.ANNEE,
+        SUM(p2.INDICERETROCESSIONG * ve.QTE_VENDUE * f.PRIXUNITP) AS CA_retro
+    FROM VENDRE ve, FACTURER f, PRODUITS p, PAYER2 p2
+    WHERE f.CODEP = ve.CODEP
+      AND f.MOIS  = ve.MOIS
+      AND f.ANNEE = ve.ANNEE
+      AND p.CODEP = ve.CODEP
+      AND p2.CODEG = p.CODEG
+      AND p2.ANNEE = ve.ANNEE
+    GROUP BY ve.CODEE, ve.MOIS, ve.ANNEE
+)
+SELECT
+    /* temps + employé */
+    m.ANNEE,
+    m.MOIS,
+    e.CODEE,
+    e.NOME,
+    e.PRENOME,
+
+    /* adresses utiles pour analyse (perso / pro) */
+    e.CPOSTALPERSE,
+    e.VILLEPERSE,
+    e.CPOSTALPROE,
+    e.VILLEPROE,
+
+    /* qualifications (via POSSEDER) */
+    q.CODEQ,
+    q.NOMQ,
+    q.TAUXMINQ,
+
+    /* direction de département (facultatif) */
+    dpt.CODED       AS CODE_DEPT_DIRIGE,
+    dpt.NOMD        AS NOM_DEPT_DIRIGE,
+    dir.DATEDEBUTDIR,
+
+    /* responsabilité de gamme (facultatif) */
+    r.CODEG         AS CODE_GAMME_RESP,
+    g.NOMG          AS NOM_GAMME_RESP,
+
+    /* --- décomposition du salaire --- */
+    p1.FIXEMENSUELE                                      AS PARTIE_FIXE,
+    (p1.INDICESALE * NVL(hu.H_U, 0))                     AS PARTIE_TRAVAIL_USINE,
+    (p1.INDICESALE * NVL(hpv.H_PV, 0))                   AS PARTIE_TRAVAIL_PV,
+    NVL(v.CA_retro, 0)                                   AS PARTIE_OBJECTIFS,
+    /* total = somme des 3 parties métier */
+    p1.FIXEMENSUELE
+      + (p1.INDICESALE * NVL(hu.H_U, 0))
+      + (p1.INDICESALE * NVL(hpv.H_PV, 0))
+      + NVL(v.CA_retro, 0)                               AS SALAIRE_MENSUEL_EMPLOYE
+
+FROM
+    m,
+    EMPLOYES e,
+    PAYER1 p1,
+    POSSEDER pos,
+    QUALIFICATIONS q,
+    hu,
+    hpv,
+    v,
+    DIRIGER dir,
+    DEPARTEMENTS dpt,
+    RESPONSABLE r,
+    GAMME g
+WHERE
+    /* base */
+    m.CODEE = e.CODEE
+    AND p1.CODEE = e.CODEE
+    AND p1.ANNEE = m.ANNEE
+
+    /* qualification (peut y en avoir plusieurs) */
+    AND pos.CODEE(+) = e.CODEE
+    AND q.CODEQ(+)   = pos.CODEQ
+
+    /* heures */
+    AND hu.CODEE(+) = m.CODEE
+    AND hu.MOIS(+)  = m.MOIS
+    AND hu.ANNEE(+) = m.ANNEE
+
+    AND hpv.CODEE(+) = m.CODEE
+    AND hpv.MOIS(+)  = m.MOIS
+    AND hpv.ANNEE(+) = m.ANNEE
+
+    /* ventes / rétro (partie objectifs) */
+    AND v.CODEE(+) = m.CODEE
+    AND v.MOIS(+)  = m.MOIS
+    AND v.ANNEE(+) = m.ANNEE
+
+    /* direction d'un département sur l'année du mois */
+    AND dir.CODEE(+) = e.CODEE
+    AND dpt.CODED(+) = dir.CODED
+    AND (dir.DATEDEBUTDIR IS NULL
+         OR EXTRACT(YEAR FROM dir.DATEDEBUTDIR) <= m.ANNEE)
+
+    /* responsable de gamme sur l'année */
+    AND r.CODEE(+) = e.CODEE
+    AND r.ANNEE(+) = m.ANNEE
+    AND g.CODEG(+) = r.CODEG
+
+ORDER BY
+    m.ANNEE,
+    m.MOIS,
+    e.NOME,
+    e.PRENOME;
