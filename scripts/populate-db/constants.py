@@ -25,21 +25,6 @@ PV_NAMES = {
     ]
 }
 
-
-NOMS = [
-    *( [
-        "Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois",
-        "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David", "Foxy"
-    ] * 5 ),
-]
-
-PRENOMS = [
-    *( [
-        "Lucas", "Louis", "Hugo", "Arthur", "Jules", "Adam", "Léo", "Noah",
-        "Emma", "Louise", "Chloé", "Lina", "Mia", "Anna", "Zoé", "Léa"
-    ] * 5 ),
-]
-
 # Bases
 QUALIFICATIONS_PROBABILITIES = {
     3: 0.20,  # CAP, BEP
