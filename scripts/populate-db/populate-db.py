@@ -17,7 +17,13 @@ def main():
     with get_connection() as con:
         cur = con.cursor()
 
-        # '''
+        cal_yyyy_mm_dd = genCalendrier()
+        cal_yyyy_mm_dd = [(d,) for d in cal_yyyy_mm_dd]
+        cal_yyyy = genCalendrier(format="%Y")
+        cal_yyyy = list(set([(d.year,) for d in cal_yyyy]))
+        cal_split = genCalendrier(split=True)
+
+        '''
         clear_all_data(cur)
 
         typeu = gen_typeu()
@@ -95,7 +101,7 @@ def main():
         cur.execute("SELECT CODEP FROM PRODUITS ORDER BY CODEP")
         produits_ids = [row[0] for row in cur.fetchall()]
 
-        # '''
+        '''
 
         # autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
         # cur.executemany("INSERT INTO AUTORISER(CODEQ,CODED) VALUES (:1,:2)", autoriser)
@@ -115,9 +121,18 @@ def main():
         # cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)
         #                    VALUES (:1,:2,:3,:4)""", fabriquer)
 
-        # responsable = gen_responsable_with_ids(employes_ids, gammes, cal4)
-        # cur.executemany("""INSERT INTO RESPONSABLE(CODEE,CODEG,ANNEE)
-        #                    VALUES (:1,:2,:3)""", responsable)
+        cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
+        employes_ids = [row[0] for row in cur.fetchall()]
+
+
+        cur.execute("SELECT CODEG FROM GAMME ORDER BY CODEG")
+        gammes = [row[0] for row in cur.fetchall()]
+
+        cur.execute("DELETE FROM RESPONSABLE")
+
+        responsable = gen_responsable_with_ids(employes_ids, gammes, cal_yyyy)
+        cur.executemany("""INSERT INTO RESPONSABLE(CODEE,CODEG,ANNEE)
+                           VALUES (:1,:2,:3)""", responsable)
 
         # payer2 = gen_payer2(gammes)
         # cur.executemany("""INSERT INTO PAYER2(CODEG,ANNEE,INDICERETROCESSIONG)

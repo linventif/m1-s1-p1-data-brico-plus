@@ -117,17 +117,23 @@ def gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_d
     return rows
 
 def gen_responsable_with_ids(employes_ids, gammes, cal4):
+    # For every gamme and every year, assign only one responsible employee
     rows = []
-    mandatory_years = [2024, 2025]
-    other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
-    years = mandatory_years + other_years
-    for _ in range(500):
-        e = random.choice(employes_ids)
-        g = random.choice(gammes)[0]
-        y = random.choice(years)
-        rows.append((e, g, y))
-    rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:500]
+    # Choose one gamme for static responsibles
+    static_gamme = random.choice(gammes)
+    fixed_responsibles = random.sample(employes_ids, k=3)
+    for g in gammes:
+        for year in cal4:
+            year_val = year[0] if isinstance(year, tuple) else year
+            if g == static_gamme:
+                # For the static gamme, pick one of the fixed responsibles (randomly per year)
+                e = random.choice(fixed_responsibles)
+            else:
+                # For other gammes, pick a random employee
+                e = random.choice(employes_ids)
+            rows.append((e, g, year_val))
+    # Uniqueness is guaranteed by construction (one per gamme/year)
+    return rows
 
 def gen_payer2(gammes):
     rows = []
