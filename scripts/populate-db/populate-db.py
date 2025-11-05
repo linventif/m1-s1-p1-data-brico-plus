@@ -101,6 +101,10 @@ def main():
         cur.execute("SELECT CODEP FROM PRODUITS ORDER BY CODEP")
         produits_ids = [row[0] for row in cur.fetchall()]
 
+        responsable = gen_responsable_with_ids(employes_ids, gammes, cal_yyyy)
+        cur.executemany("""INSERT INTO RESPONSABLE(CODEE,CODEG,ANNEE)
+                           VALUES (:1,:2,:3)""", responsable)
+
         '''
 
         # autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
@@ -113,26 +117,23 @@ def main():
         # avoir_type = gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids)
         # cur.executemany("INSERT INTO AVOIR_TYPE(CODEU,CODETU) VALUES (:1,:2)", avoir_type)
 
-        # diriger = gen_diriger_with_ids(employes_ids, departements_ids, cal2_dates)
-        # cur.executemany("""INSERT INTO DIRIGER(CODEE,CODED,DATEDEBUTDIR)
-        #                    VALUES (:1,:2,:3)""", diriger)
-
-        # fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates)
-        # cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)
-        #                    VALUES (:1,:2,:3,:4)""", fabriquer)
 
         cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
         employes_ids = [row[0] for row in cur.fetchall()]
 
 
-        cur.execute("SELECT CODEG FROM GAMME ORDER BY CODEG")
-        gammes = [row[0] for row in cur.fetchall()]
+        cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
+        departements_ids = [row[0] for row in cur.fetchall()]
 
-        cur.execute("DELETE FROM RESPONSABLE")
+        cur.execute("DELETE FROM DIRIGER")
 
-        responsable = gen_responsable_with_ids(employes_ids, gammes, cal_yyyy)
-        cur.executemany("""INSERT INTO RESPONSABLE(CODEE,CODEG,ANNEE)
-                           VALUES (:1,:2,:3)""", responsable)
+        diriger = gen_diriger_with_ids(employes_ids, departements_ids, cal_yyyy_mm_dd)
+        cur.executemany("""INSERT INTO DIRIGER(CODEE,CODED,DATEDEBUTDIR)
+                           VALUES (:1,:2,:3)""", diriger)
+
+        # fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates)
+        # cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)
+        #                    VALUES (:1,:2,:3,:4)""", fabriquer)
 
         # payer2 = gen_payer2(gammes)
         # cur.executemany("""INSERT INTO PAYER2(CODEG,ANNEE,INDICERETROCESSIONG)

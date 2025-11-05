@@ -81,14 +81,73 @@ def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids):
     return rows
 
 def gen_diriger_with_ids(employes_ids, departements_ids, cal2_dates):
+    """
+    Generate director assignments for departments.
+    - Each department has a director who changes every 6 months to 4 years
+    - One department keeps the same director throughout the entire period
+    - Returns: [(CODEE, CODED, DATEDEBUTDIR), ...]
+    Only creates entries when a director CHANGES, not for every date.
+    """
     rows = []
-    for _ in range(500):
-        e = random.choice(employes_ids)
-        d = random.choice(departements_ids)
-        date = random.choice(cal2_dates)
-        rows.append((e, d, date))
-    rows = list({(a, b, c) for (a, b, c) in rows})
-    return rows[:500]
+
+    # Extract datetime objects if they are wrapped in tuples
+    dates = []
+    for d in cal2_dates:
+        if isinstance(d, tuple):
+            dates.append(d[0])
+        else:
+            dates.append(d)
+
+    # Sort dates to have chronological order
+    sorted_dates = sorted(dates)
+    start_date = sorted_dates[0]
+    end_date = sorted_dates[-1]
+
+    # Pick one department that will have a static director
+    static_dept = random.choice(departements_ids)
+    static_director = random.choice(employes_ids)
+
+    for dept_id in departements_ids:
+        if dept_id == static_dept:
+            # Static department: same director from start to end, only one entry
+            rows.append((static_director, dept_id, start_date))
+        else:
+            # Dynamic department: director changes every 6 months to 4 years
+            current_date = start_date
+
+            # First director assignment
+            director = random.choice(employes_ids)
+            rows.append((director, dept_id, current_date))
+
+            # Generate subsequent changes
+            from datetime import timedelta
+            while current_date < end_date:
+                # Determine next change date (6 months to 4 years later)
+                months_to_add = random.randint(6, 48)  # 6 months to 4 years
+                days_to_add = months_to_add * 30  # approximate
+                next_change_date = current_date + timedelta(days=days_to_add)
+
+                # Stop if next change would be after end_date
+                if next_change_date > end_date:
+                    break
+
+                # Find a date in sorted_dates that is close to next_change_date
+                future_dates = [d for d in sorted_dates if d >= next_change_date]
+                if not future_dates:
+                    break
+
+                # Use the first future date as the change date
+                change_date = future_dates[0]
+
+                # Assign a new director (different from previous one)
+                new_director = random.choice([e for e in employes_ids if e != director])
+                rows.append((new_director, dept_id, change_date))
+
+                # Update for next iteration
+                director = new_director
+                current_date = change_date
+
+    return rows
 
 def gen_autoriser_with_ids(qualifs_ids, departements_ids):
     rows = []
