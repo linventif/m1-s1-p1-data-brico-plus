@@ -16,12 +16,48 @@ def gen_departements_with_ids(usines_with_ids):
     return rows
 
 def gen_posseder_with_ids(employes_ids, qualifs_ids):
+    from constants import QUALIFICATIONS_PROBABILITIES, QUALIFICATIONS
     rows = []
-    for e_id in employes_ids:
-        qset = random.sample(qualifs_ids, k=random.randint(2, 5))
-        for q_id in qset:
-            rows.append((e_id, q_id))
-    return rows[:max(500, len(rows))]
+    # Build a mapping from qualification name to CODEQ
+    # qualifs_ids is expected to be a list of CODEQ, and we need the names
+    # So require a second argument: qualifs_name_map (dict: name -> CODEQ)
+    # If not provided, fallback to old logic
+    if isinstance(qualifs_ids, dict):
+        name_to_codeq = qualifs_ids
+        qualif_names_by_level = {}
+        for lvl in sorted(QUALIFICATIONS.keys()):
+            qualif_names_by_level[lvl] = [q[0] for q in QUALIFICATIONS[lvl]]
+        levels = list(QUALIFICATIONS_PROBABILITIES.keys())
+        probabilities = [QUALIFICATIONS_PROBABILITIES[lvl] for lvl in levels]
+        for e_id in employes_ids:
+            lvl = random.choices(levels, weights=probabilities, k=1)[0]
+            main_name = random.choice(qualif_names_by_level[lvl])
+            main_codeq = name_to_codeq[main_name]
+            rows.append((e_id, main_codeq))
+            if lvl >= 6:
+                lower_levels = [l for l in levels if l < 6]
+                lower_lvl = random.choice(lower_levels)
+                lower_name = random.choice(qualif_names_by_level[lower_lvl])
+                lower_codeq = name_to_codeq[lower_name]
+                rows.append((e_id, lower_codeq))
+            # Optionally, add more random qualifications (2-5 total)
+            extra_count = random.randint(1, 3)
+            all_names = set(name_to_codeq.keys())
+            already = {main_name}
+            if lvl >= 6:
+                already.add(lower_name)
+            extra_names = random.sample(list(all_names - already), k=extra_count)
+            for ename in extra_names:
+                rows.append((e_id, name_to_codeq[ename]))
+        return rows[:max(500, len(rows))]
+    else:
+        # fallback: old logic
+        for e_id in employes_ids:
+            sample_size = min(len(qualifs_ids), random.randint(2, 5)) if qualifs_ids else 0
+            qset = random.sample(qualifs_ids, k=sample_size) if sample_size > 0 else []
+            for q_id in qset:
+                rows.append((e_id, q_id))
+        return rows[:max(500, len(rows))]
 
 def gen_assembler_with_ids(produits_ids):
     rows = []

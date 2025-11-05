@@ -16,16 +16,15 @@ random.seed(31)
 def main():
     with get_connection() as con:
         cur = con.cursor()
+
+
+        # '''
         clear_all_data(cur)
-
-
-
         # usines = gen_usines()
         # cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
         #                    VALUES (:1,:2,:3,:4,:5)""", usines)
         # cur.execute("SELECT CODEU, NOMU FROM USINES ORDER BY CODEU")
         # usines_with_ids = cur.fetchall()
-        # '''
         typeu = gen_typeu()
         cur.executemany("INSERT INTO TYPEU(NOMTU) VALUES (:1)", typeu)
         cur.execute("SELECT CODETU, NOMTU FROM TYPEU ORDER BY CODETU")
@@ -51,7 +50,6 @@ def main():
                            VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10)""", employes)
         cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
         employes_ids = [row[0] for row in cur.fetchall()]
-        # '''
 
         qualifs = gen_qualifs()
         # Insert with CODEQ_EST_COMPLETEE as None
@@ -74,6 +72,12 @@ def main():
         if qualifs_to_update:
             cur.executemany("UPDATE QUALIFICATIONS SET CODEQ_EST_COMPLETEE = :1 WHERE CODEQ = :2", qualifs_to_update)
 
+        qualifs_ids = [row[0] for row in qualifs_rows]
+        # '''
+
+        posseder = gen_posseder_with_ids(employes_ids, qualifs_ids)
+        cur.executemany("INSERT INTO POSSEDER(CODEE,CODEQ) VALUES (:1,:2)", posseder)
+
         # departements = gen_departements_with_ids(usines_with_ids)
         # cur.executemany("""INSERT INTO DEPARTEMENTS(NOMD,CODEU) VALUES (:1,:2)""", departements)
         # cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
@@ -91,8 +95,9 @@ def main():
         # cur.execute("SELECT CODEP FROM PRODUITS ORDER BY CODEP")
         # produits_ids = [row[0] for row in cur.fetchall()]
 
-        # posseder = gen_posseder_with_ids(employes_ids, qualifs_ids)
-        # cur.executemany("INSERT INTO POSSEDER(CODEE,CODEQ) VALUES (:1,:2)", posseder)
+
+        # autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
+        # cur.executemany("INSERT INTO AUTORISER(CODEQ,CODED) VALUES (:1,:2)", autoriser)
 
         # assembler = gen_assembler_with_ids(produits_ids)
         # cur.executemany("""INSERT INTO ASSEMBLER(CODEP_EST_COMPOSE,CODEP_COMPOSE,QTE_ASSEMBL)
@@ -104,9 +109,6 @@ def main():
         # diriger = gen_diriger_with_ids(employes_ids, departements_ids, cal2_dates)
         # cur.executemany("""INSERT INTO DIRIGER(CODEE,CODED,DATEDEBUTDIR)
         #                    VALUES (:1,:2,:3)""", diriger)
-
-        # autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
-        # cur.executemany("INSERT INTO AUTORISER(CODEQ,CODED) VALUES (:1,:2)", autoriser)
 
         # fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates)
         # cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)

@@ -41,6 +41,15 @@ PRENOMS = [
 ]
 
 # Bases
+QUALIFICATIONS_PROBABILITIES = {
+    3: 0.20,  # CAP, BEP
+    4: 0.30,  # Bac Pro, BP, Bac
+    5: 0.20,  # BTS, DUT
+    6: 0.15,  # Licence Pro, BUT, Licence
+    7: 0.10,   # Master
+    8: 0.05,   # Doctorat
+}
+
 QUALIFICATIONS = {
     # Niveau: [(diplome_complet, salaire_min, salaire_max, base_diplome)]
     3: [
