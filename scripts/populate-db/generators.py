@@ -4,7 +4,7 @@ Générateurs de données pour toutes les tables
 """
 
 import random
-from config import NOMBRE_EMPLOYES_PAR_POINT_VENTE, NOMBRE_EMPLOYES_PAR_USINE, NOMBRE_POINTS_VENTE, NOMBRE_USINES
+from config import NOMBRE_EMPLOYES_PAR_POINT_VENTE, NOMBRE_EMPLOYES_PAR_USINE, NOMBRE_POINTS_VENTE, NOMBRE_USINES, PRODUITS_CHANCE_DOUBLE_MARQUE
 from constants import *
 from utils import getRandomFullName, getRandomPhone, getRandomStreet, getRandomStreetNearby
 
@@ -130,45 +130,44 @@ def gen_points_vente(n=NOMBRE_POINTS_VENTE):
         ))
     return rows
 
-# def gen_produits(n=N_PRODUITS):
-#     """Génère des produits réalistes à partir des recettes"""
-#     rows = []
-#     code = 1
+def gen_produits():
+    """
+    Génère des produits à partir de la constante PRODUITS et MARQUES.
+    Retourne une liste de tuples (nom_produit, marque, code_gamme) pour l'insertion SQL.
+    Si la probabilité PRODUITS_CHANCE_DOUBLE_MARQUE est atteinte, un produit peut avoir
+    2 ou 3 marques (min 1, max 3). Les marques multiples sont concaténées par une virgule.
+    Format: [(NOMP, MARQUEP, CODEG), ...]
+    """
+    rows = []
 
-#     marques = ["ProLine", "MaisonPro", "BuildX", "Crafto", "Lumina", "AquaFix",
-#               "TechMax", "HomeStyle", "PowerTool", "QualityPlus"]
+    # Créer un mapping des noms de gamme vers leur code (G01, G02, etc.)
+    gamme_to_code = {g: f"G{str(i).zfill(2)}" for i, g in enumerate(GAMMES, start=1)}
 
-#     # Pour chaque recette, générer plusieurs variantes avec des modèles différents
-#     for nom_produit, gamme_nom, type_usine in RECETTES_PRODUITS:
-#         if code > n:
-#             break
+    # Nombre de variantes par produit (modifiable)
+    NB_VARIANTS_MIN = 2
+    NB_VARIANTS_MAX = 4
 
-#         # Trouver le code de la gamme
-#         codeg = None
-#         for i, g_nom in enumerate(GAMMES, start=1):
-#             if g_nom == gamme_nom:
-#                 codeg = f"G{str(i).zfill(2)}"
-#                 break
+    for nom_produit, gamme_nom, type_usine, composants in PRODUITS:
+        codeg = gamme_to_code.get(gamme_nom)
+        if not codeg:
+            print(f"Attention: Gamme '{gamme_nom}' non trouvée pour le produit '{nom_produit}'")
+            continue
 
-#         if not codeg:
-#             continue
+        marques_disponibles = MARQUES.get(gamme_nom, ["Generic"])
+        nb_variants = random.randint(NB_VARIANTS_MIN, NB_VARIANTS_MAX)
 
-#         # Générer 2-3 variantes du produit avec différentes marques et modèles
-#         nb_variantes = random.randint(2, 3)
-#         for i in range(min(nb_variantes, (n - code + 1))):
-#             if code > n:
-#                 break
-#             marque = random.choice(marques)
-#             modele = random.randint(100, 999)
-#             nom_final = f"{nom_produit} {modele}"
-#             rows.append((nom_final, marque, codeg))
-#             code += 1
+        used_marques = set()
+        tries = 0
+        max_tries = nb_variants * 4  # avoid infinite loop if not enough unique combinations
+        while len(used_marques) < nb_variants and tries < max_tries:
+            tries += 1
+            # Always select only one brand
+            marque = random.choice(marques_disponibles)
+            if marque in used_marques:
+                continue
+            used_marques.add(marque)
+            modele = random.randint(100, 999)
+            nom_final = f"{nom_produit}"
+            rows.append((nom_final, marque, codeg))
 
-#     # Si on n'a pas assez de produits, générer des produits génériques
-#     while len(rows) < n:
-#         nom = f"Produit générique {random.randint(1000, 9999)}"
-#         marque = random.choice(["Generic", "Standard", "Basic"])
-#         codeg = f"G{random.randint(1, len(GAMMES)):02d}"
-#         rows.append((nom, marque, codeg))
-
-#     return rows[:n]
+    return rows

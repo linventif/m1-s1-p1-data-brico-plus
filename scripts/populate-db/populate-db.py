@@ -82,7 +82,6 @@ def main():
         cur.executemany("""INSERT INTO DEPARTEMENTS(NOMD,CODEU) VALUES (:1,:2)""", departements)
         cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
         departements_ids = [row[0] for row in cur.fetchall()]
-        # '''
 
         pvs = gen_points_vente()
         cur.executemany("""INSERT INTO POINTS_DE_VENTE
@@ -91,11 +90,12 @@ def main():
         cur.execute("SELECT CODEPV FROM POINTS_DE_VENTE ORDER BY CODEPV")
         pvs_ids = [row[0] for row in cur.fetchall()]
 
-        # produits = gen_produits()
-        # cur.executemany("""INSERT INTO PRODUITS(NOMP,MARQUEP,CODEG) VALUES (:1,:2,:3)""", produits)
-        # cur.execute("SELECT CODEP FROM PRODUITS ORDER BY CODEP")
-        # produits_ids = [row[0] for row in cur.fetchall()]
+        produits = gen_produits()
+        cur.executemany("""INSERT INTO PRODUITS(NOMP,MARQUEP,CODEG) VALUES (:1,:2,:3)""", produits)
+        cur.execute("SELECT CODEP FROM PRODUITS ORDER BY CODEP")
+        produits_ids = [row[0] for row in cur.fetchall()]
 
+        # '''
 
         # autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
         # cur.executemany("INSERT INTO AUTORISER(CODEQ,CODED) VALUES (:1,:2)", autoriser)
