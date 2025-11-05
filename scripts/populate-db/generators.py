@@ -35,13 +35,13 @@ def gen_qualifs():
             rows.append((diplome, taux, base_diplome))
     return rows
 
-# def gen_usines(n=N_USINES):
-#     rows = []
-#     for code in range(1, n+1):
-#         city, cp = pick_city(True)
-#         nom_usine = f"Usine {city} {code}"
-#         rows.append((nom_usine, street(), cp, city, phone(hg=cp.startswith("31"))))
-#     return rows
+def gen_usines(n=NOMBRE_USINES):
+    rows = []
+    for code in range(1, n+1):
+        street_info = getRandomStreet()
+        nom_usine = f"Usine {street_info['city']}"
+        rows.append((nom_usine, street_info['street'], street_info['postal_code'], street_info['city'], getRandomPhone()))
+    return rows
 
 def gen_typeu():
     return [(nom,) for nom in TYPEU]

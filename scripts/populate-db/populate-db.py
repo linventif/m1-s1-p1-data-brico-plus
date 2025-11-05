@@ -5,7 +5,7 @@ Point d'entrée principal.
 """
 
 import random
-from database import get_connection, clear_all_data
+from database import delete_table_data, get_connection, clear_all_data
 from generators import *
 from relations_generators import *
 from utils import genCalendrier
@@ -20,11 +20,7 @@ def main():
 
         # '''
         clear_all_data(cur)
-        # usines = gen_usines()
-        # cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
-        #                    VALUES (:1,:2,:3,:4,:5)""", usines)
-        # cur.execute("SELECT CODEU, NOMU FROM USINES ORDER BY CODEU")
-        # usines_with_ids = cur.fetchall()
+
         typeu = gen_typeu()
         cur.executemany("INSERT INTO TYPEU(NOMTU) VALUES (:1)", typeu)
         cur.execute("SELECT CODETU, NOMTU FROM TYPEU ORDER BY CODETU")
@@ -73,15 +69,21 @@ def main():
             cur.executemany("UPDATE QUALIFICATIONS SET CODEQ_EST_COMPLETEE = :1 WHERE CODEQ = :2", qualifs_to_update)
 
         qualifs_ids = [row[0] for row in qualifs_rows]
-        # '''
 
         posseder = gen_posseder_with_ids(employes_ids, qualifs_ids)
         cur.executemany("INSERT INTO POSSEDER(CODEE,CODEQ) VALUES (:1,:2)", posseder)
 
-        # departements = gen_departements_with_ids(usines_with_ids)
-        # cur.executemany("""INSERT INTO DEPARTEMENTS(NOMD,CODEU) VALUES (:1,:2)""", departements)
-        # cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
-        # departements_ids = [row[0] for row in cur.fetchall()]
+        usines = gen_usines()
+        cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
+                           VALUES (:1,:2,:3,:4,:5)""", usines)
+        cur.execute("SELECT CODEU, NOMU FROM USINES ORDER BY CODEU")
+        usines_with_ids = cur.fetchall()
+
+        departements = gen_departements_with_ids(usines_with_ids)
+        cur.executemany("""INSERT INTO DEPARTEMENTS(NOMD,CODEU) VALUES (:1,:2)""", departements)
+        cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
+        departements_ids = [row[0] for row in cur.fetchall()]
+        # '''
 
         # pvs = gen_points_vente()
         # cur.executemany("""INSERT INTO POINTS_DE_VENTE

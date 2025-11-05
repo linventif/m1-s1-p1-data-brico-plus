@@ -7,6 +7,9 @@ Gestion de la base de données et des insertions
 import oracledb
 from config import HOST, PORT, SERVICE, USER, PASS
 
+def delete_table_data(cursor, table_name):
+    cursor.execute(f"DELETE FROM {table_name}")
+
 def clear_all_data(cursor):
     """Vide toutes les tables dans l'ordre correct"""
     tables_to_clear = [
