@@ -1,0 +1,33 @@
+# -*- coding: utf-8 -*-
+"""
+Gestion de la base de données et des insertions
+"""
+# note: si pas d'heure de travail pas de bonnus
+# note: la ville pro employé doit être proche de la ville pro usine
+import oracledb
+from config import HOST, PORT, SERVICE, USER, PASS
+
+def delete_table_data(cursor, table_name):
+    cursor.execute(f"DELETE FROM {table_name}")
+
+def clear_all_data(cursor):
+    """Vide toutes les tables dans l'ordre correct"""
+    tables_to_clear = [
+        "TRAVAILLER_PT_VENTE", "TRAVAILLER_USINE", "PAYER1", "VENDRE",
+        "FACTURER", "PAYER2", "RESPONSABLE", "FABRIQUER_ASSEMBLER1",
+        "AUTORISER", "DIRIGER", "AVOIR_TYPE", "ASSEMBLER", "POSSEDER",
+        "PRODUITS", "POINTS_DE_VENTE", "DEPARTEMENTS", "QUALIFICATIONS",
+        "EMPLOYES", "USINES", "CALENDRIER4", "CALENDRIER3", "CALENDRIER2",
+        "CALENDRIER1", "GAMME", "TYPEPV", "TYPEU"
+    ]
+
+    for table in tables_to_clear:
+        try:
+            cursor.execute(f"DELETE FROM {table}")
+        except Exception:
+            pass
+
+def get_connection():
+    """Crée et retourne une connexion Oracle"""
+    dsn = oracledb.makedsn(HOST, PORT, service_name=SERVICE)
+    return oracledb.connect(user=USER, password=PASS, dsn=dsn)

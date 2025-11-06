@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="PROJET_BRICO_PLUS2" uuid="01128fcc-80a7-4ec3-85d2-11cbb2a57383">
+    <data-source source="LOCAL" name="PROJET_BRICO_PLUS" uuid="01128fcc-80a7-4ec3-85d2-11cbb2a57383">
       <driver-ref>oracle.19</driver-ref>
       <synchronize>true</synchronize>
       <auto-commit>false</auto-commit>
-      <jdbc-driver>oracle.jdbc.driver.OracleDriver</jdbc-driver>
+      <jdbc-driver>oracle.jdbc.OracleDriver</jdbc-driver>
+      <jdbc-url>jdbc:oracle:thin:@//90.103.29.148:15210/FREEPDB1</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="GROUPE_12" uuid="7f7cf2fd-b72e-4ee2-9245-c9ce5e2bafb5">
+      <driver-ref>oracle.19</driver-ref>
+      <synchronize>true</synchronize>
+      <auto-commit>false</auto-commit>
+      <jdbc-driver>oracle.jdbc.OracleDriver</jdbc-driver>
       <jdbc-url>jdbc:oracle:thin:@//90.103.29.148:15210/FREEPDB1</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>

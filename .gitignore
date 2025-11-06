@@ -1,2 +1,12 @@
 .env
 .venv
+.idea
+__pycache__
+*.gz
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.bz2
+*.xz
+*.csv
