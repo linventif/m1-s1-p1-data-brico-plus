@@ -37,12 +37,20 @@ def gen_employes_by_factory_size(factory_info, pv_info):
     rows = []
     employee_workplace = []  # Track where each employee works
     
+    print("\n" + "=" * 60)
+    print("=== GENERATING EMPLOYEES ===")
+    print("=" * 60)
+    
     # Generate factory employees
+    total_factory = sum(info['taille'] for info in factory_info.values())
+    print(f"\n📍 Generating {total_factory} factory employees...")
+    
+    factory_count = 0
     for factory_id, info in factory_info.items():
         factory_address = info.get('address')
         num_employees = info['taille']
         
-        for _ in range(num_employees):
+        for i in range(num_employees):
             fullname = getRandomFullName()
             streetPerso = getRandomStreet()
             # Professional address near factory
@@ -51,24 +59,37 @@ def gen_employes_by_factory_size(factory_info, pv_info):
             else:
                 streetPro = getRandomStreetNearby(streetPerso)
             
+            # Limit all strings to 50 characters
             rows.append((
-                fullname["last_name"], fullname["first_name"], 
-                streetPerso["street"], streetPerso["postal_code"], streetPerso["city"],
-                streetPro["street"], streetPro["postal_code"], streetPro["city"],
-                getRandomPhone("perso"), getRandomPhone("pro")
+                fullname["last_name"][:50], 
+                fullname["first_name"][:50], 
+                streetPerso["street"][:50], 
+                streetPerso["postal_code"][:50], 
+                streetPerso["city"][:50],
+                streetPro["street"][:50], 
+                streetPro["postal_code"][:50], 
+                streetPro["city"][:50],
+                getRandomPhone("perso")[:50], 
+                getRandomPhone("pro")[:50]
             ))
             employee_workplace.append(('factory', factory_id))
+            
+            factory_count += 1
+            if factory_count % 500 == 0:
+                print(f"  ├─ Progress: {factory_count}/{total_factory} factory employees")
+    
+    print(f"  ✓ Completed: {factory_count} factory employees")
     
     # Generate point of sale employees
-    total_pv_employees = 0
+    print(f"\n🏪 Generating point of sale employees...")
+    pv_count = 0
+    
     for codepv, type_pv, pv_address in pv_info:
         # Determine number of employees based on type
         if type_pv == "Brico-Express":
             num_employees = random.randint(8, 15)
         else:  # GSB
             num_employees = random.randint(75, 150)
-        
-        total_pv_employees += num_employees
         
         for _ in range(num_employees):
             fullname = getRandomFullName()
@@ -79,21 +100,32 @@ def gen_employes_by_factory_size(factory_info, pv_info):
             else:
                 streetPro = getRandomStreetNearby(streetPerso)
             
+            # Limit all strings to 50 characters
             rows.append((
-                fullname["last_name"], fullname["first_name"], 
-                streetPerso["street"], streetPerso["postal_code"], streetPerso["city"],
-                streetPro["street"], streetPro["postal_code"], streetPro["city"],
-                getRandomPhone("perso"), getRandomPhone("pro")
+                fullname["last_name"][:50], 
+                fullname["first_name"][:50], 
+                streetPerso["street"][:50], 
+                streetPerso["postal_code"][:50], 
+                streetPerso["city"][:50],
+                streetPro["street"][:50], 
+                streetPro["postal_code"][:50], 
+                streetPro["city"][:50],
+                getRandomPhone("perso")[:50], 
+                getRandomPhone("pro")[:50]
             ))
             employee_workplace.append(('pv', codepv))
+            
+            pv_count += 1
+            if pv_count % 500 == 0:
+                print(f"  ├─ Progress: {pv_count} PV employees")
     
-    total_factory = sum(info['taille'] for info in factory_info.values())
+    print(f"  ✓ Completed: {pv_count} PV employees")
     
-    print(f"\n=== Employee Generation ===")
-    print(f"Factory employees: {total_factory}")
-    print(f"Point of sale employees: {total_pv_employees}")
-    print(f"Total employees: {len(rows)}")
-    print("=" * 40)
+    print("\n" + "=" * 60)
+    print(f"✅ Total employees generated: {len(rows)}")
+    print(f"   ├─ Factory employees: {factory_count}")
+    print(f"   └─ PV employees: {pv_count}")
+    print("=" * 60 + "\n")
     
     return rows, employee_workplace
 
@@ -113,10 +145,18 @@ def gen_qualifs():
 
 def gen_usines(n=NOMBRE_USINES):
     rows = []
+    print(f"\n🏭 Generating {n} factories...")
     for code in range(1, n+1):
         street_info = getRandomStreet()
-        nom_usine = f"Usine {street_info['city']}"
-        rows.append((nom_usine, street_info['street'], street_info['postal_code'], street_info['city'], getRandomPhone("pro")))
+        nom_usine = f"Usine {street_info['city']}"[:50]
+        rows.append((
+            nom_usine, 
+            street_info['street'][:50], 
+            street_info['postal_code'][:50], 
+            street_info['city'][:50], 
+            getRandomPhone("pro")[:50]
+        ))
+    print(f"  ✓ Completed: {n} factories")
     return rows
 
 def gen_typeu():
@@ -195,25 +235,34 @@ def gen_gammes():
 
 def gen_points_vente(n=NOMBRE_POINTS_VENTE):
     rows = []
-    pv_info = []  # Store PV info for employee generation
-    
+    pv_info = {}
+    print(f"\n🏪 Generating {n} points of sale...")
     for code in range(1, n+1):
+        is_express = random.random() < 0.7
         street_info = getRandomStreet()
-        type_pv = random.choices(PV_TYPES, weights=[0.6, 0.4])[0]
-        nom_pv = random.choice(PV_NAMES[type_pv])
-        rows.append((
-            nom_pv, street_info['street'], street_info['postal_code'], street_info['city'],
-            getRandomPhone("pro"),
-            type_pv
-        ))
+        if is_express:
+            nom_pv = f"Brico-Express {street_info['city']}"[:50]
+            type_pv = "Brico-Express"
+        else:
+            nom_pv = f"GSB {street_info['city']}"[:50]
+            type_pv = "GSB"
         
-        # Store for later use in employee generation (code will be assigned by DB)
-        pv_info.append((code, type_pv, {
-            'street': street_info['street'],
+        row = (
+            nom_pv, 
+            street_info['street'][:50], 
+            street_info['postal_code'][:50], 
+            street_info['city'][:50], 
+            getRandomPhone("pro")[:50],
+            type_pv
+        )
+        rows.append(row)
+        pv_info[code] = {
+            'is_express': is_express,
             'postal_code': street_info['postal_code'],
             'city': street_info['city']
-        }))
+        }
     
+    print(f"  ✓ Completed: {n} points of sale")
     return rows, pv_info
 
 def gen_produits():
@@ -225,6 +274,7 @@ def gen_produits():
     Format: [(NOMP, MARQUEP, CODEG), ...]
     """
     rows = []
+    print(f"\n📦 Generating products...")
 
     # Créer un mapping des noms de gamme vers leur code (G01, G02, etc.)
     gamme_to_code = {g: f"G{str(i).zfill(2)}" for i, g in enumerate(GAMMES, start=1)}
@@ -233,6 +283,7 @@ def gen_produits():
     NB_VARIANTS_MIN = 2
     NB_VARIANTS_MAX = 4
 
+    total_processed = 0
     for nom_produit, gamme_nom, type_usine, composants in PRODUITS:
         codeg = gamme_to_code.get(gamme_nom)
         if not codeg:
@@ -253,7 +304,12 @@ def gen_produits():
                 continue
             used_marques.add(marque)
             modele = random.randint(100, 999)
-            nom_final = f"{nom_produit}"
-            rows.append((nom_final, marque, codeg))
+            nom_final = f"{nom_produit}"[:50]
+            rows.append((nom_final, marque[:50], codeg))
+        
+        total_processed += 1
+        if total_processed % 50 == 0:
+            print(f"  Progress: {total_processed}/{len(PRODUITS)} product types processed...")
 
+    print(f"  ✓ Completed: {len(rows)} product variants generated from {len(PRODUITS)} product types")
     return rows
