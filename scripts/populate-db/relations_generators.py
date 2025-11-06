@@ -571,12 +571,13 @@ def gen_facturer_with_ids(produits_ids, cal3):
             rows.append((p_id, m, y, pu))
     return rows[:500]
 
-def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_workplace, cal3):
+def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_workplace, cal3, trav_pv):
     """
     Generate sales records based on point of sale size and employee assignments.
     - Larger stores sell more products
     - Employees only sell at their assigned location
     - Sales volume depends on store type (Express vs GSB)
+    - CRITICAL: Employees can ONLY sell during months when they have work hours at the PV
 
     Parameters:
     - employes_ids: list of employee IDs
@@ -585,12 +586,21 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
     - pv_info: dict with PV details (is_express, postal_code, city)
     - employee_workplace: list of lists containing (workplace_type, workplace_id) tuples
     - cal3: list of (month, year) tuples
+    - trav_pv: list of PV work hour records [(CODEE, CODEPV, MOIS, ANNEE, NBHEURES_PV), ...]
 
     Returns: [(CODEE, CODEPV, CODEP, MOIS, ANNEE, QTE_VENDUE), ...]
     """
     rows = []
 
     print("\n🛒 Generating sales records...")
+
+    # Build mapping of employees working at PV by month/year
+    # Key: (employee_id, pv_id, month, year) -> has work hours
+    employee_pv_month_hours = set()
+    for codee, codepv, mois, annee, nbheures in trav_pv:
+        employee_pv_month_hours.add((codee, codepv, mois, annee))
+
+    print(f"  ├─ Employee-PV-Month combinations with work hours: {len(employee_pv_month_hours)}")
 
     # Build mapping of employees to their workplaces
     pv_employees = {}  # pv_id -> [employee_ids]
@@ -610,6 +620,7 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
     sampled_cal = random.sample(cal3, min(len(cal3), 200))
 
     total_records = 0
+    skipped_no_hours = 0
 
     for pv_id in pvs_ids:
         # Get PV info
@@ -640,10 +651,20 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
         store_dates = random.sample(sampled_cal, k=min(len(sampled_cal), 40))
 
         for month, year in store_dates:
-            # Select employees who make sales this month
-            num_selling_employees = min(len(pv_employee_list),
-                                       max(1, len(pv_employee_list) // 2))
-            selling_employees = random.sample(pv_employee_list, k=num_selling_employees)
+            # Filter employees who have work hours THIS MONTH at THIS PV
+            employees_with_hours_this_month = [
+                emp_id for emp_id in pv_employee_list
+                if (emp_id, pv_id, month, year) in employee_pv_month_hours
+            ]
+
+            if not employees_with_hours_this_month:
+                skipped_no_hours += 1
+                continue
+
+            # Select employees who make sales this month (only from those with hours)
+            num_selling_employees = min(len(employees_with_hours_this_month),
+                                       max(1, len(employees_with_hours_this_month) // 2))
+            selling_employees = random.sample(employees_with_hours_this_month, k=num_selling_employees)
 
             for emp_id in selling_employees:
                 # Number of different products this employee sells this month
@@ -658,6 +679,7 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
                     if total_records % 1000 == 0:
                         print(f"  ├─ Progress: {total_records} sales records")
 
+    print(f"  ├─ Skipped {skipped_no_hours} PV-month combinations (no employees with work hours)")
     print(f"  ✓ Completed: {total_records} sales records")
     return rows
 

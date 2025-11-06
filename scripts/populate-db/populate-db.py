@@ -218,34 +218,28 @@ def main():
                            VALUES (:1,:2,:3,:4,:5)""", trav_pv)
         print(f"  ✓ Completed: {len(trav_pv)} PV work hour records")
 
-        # Collect employees who actually have work hours (99.9% requirement)
+        # Collect ONLY employees who actually have work hours - NO PAY WITHOUT WORK
         employees_with_hours = set()
         for row in trav_u:
             employees_with_hours.add(row[0])  # CODEE
         for row in trav_pv:
             employees_with_hours.add(row[0])  # CODEE
         
-        # Allow 0.1% of employees to have salary without work hours
         employees_with_hours_list = list(employees_with_hours)
-        num_employees_without_hours = max(0, int(len(employes_ids) * 0.001))
         employees_without_hours = [e for e in employes_ids if e not in employees_with_hours]
-        if employees_without_hours and num_employees_without_hours > 0:
-            employees_without_hours_sample = random.sample(
-                employees_without_hours, 
-                min(num_employees_without_hours, len(employees_without_hours))
-            )
-            employees_with_hours_list.extend(employees_without_hours_sample)
 
         print(f"\n💰 Generating employee salaries...")
-        print(f"  ├─ Employees with work hours: {len(employees_with_hours)}")
-        print(f"  ├─ Employees without hours (0.1%): {len(employees_with_hours_list) - len(employees_with_hours)}")
+        print(f"  ├─ Total employees: {len(employes_ids)}")
+        print(f"  ├─ Employees with work hours (get paid): {len(employees_with_hours)}")
+        print(f"  └─ Employees without hours (NO pay): {len(employees_without_hours)}")
         payer1 = gen_payer1_with_ids(employees_with_hours_list, cal_yyyy)
         cur.executemany("""INSERT INTO PAYER1(CODEE,ANNEE,FIXEMENSUELE,INDICESALE)
                            VALUES (:1,:2,:3,:4)""", payer1)
         print(f"  ✓ Completed: {len(payer1)} salary records")
 
         print("\n🛒 Generating sales records...")
-        vendre = gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info_with_db_ids, employee_workplace_remapped, cal_split)
+        # Pass PV work hours to ensure employees can only sell when they work
+        vendre = gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info_with_db_ids, employee_workplace_remapped, cal_split, trav_pv)
         cur.executemany("""INSERT INTO VENDRE(CODEE,CODEPV,CODEP,MOIS,ANNEE,QTE_VENDUE)
                            VALUES (:1,:2,:3,:4,:5,:6)""", vendre)
         print(f"  ✓ Completed: {len(vendre)} sales records")
