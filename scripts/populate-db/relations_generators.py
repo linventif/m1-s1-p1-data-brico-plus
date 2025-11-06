@@ -411,17 +411,26 @@ def gen_responsable_with_ids(employes_ids, gammes, cal4):
     # Uniqueness is guaranteed by construction (one per gamme/year)
     return rows
 
-def gen_payer2(gammes):
+def gen_payer2(gammes, cal4):
     """
     Generate commission/retrocession indices for product ranges by year.
 
     Parameters:
     - gammes: list of (CODEG, NOMG) tuples from GAMME table
+    - cal4: list of year tuples from CALENDRIER4
 
     Returns: [(CODEG, ANNEE, INDICERETROCESSIONG), ...]
     """
     rows = []
-    all_years = list(range(2000, 2026))  # More recent years only
+
+    # Extract years from cal4 (unwrap tuples if needed)
+    all_years = []
+    for y in cal4:
+        if isinstance(y, tuple):
+            all_years.append(y[0])
+        else:
+            all_years.append(y)
+    all_years = sorted(list(set(all_years)))
 
     print("\n📊 Generating product range commissions...")
 

@@ -201,7 +201,7 @@ def main():
                            VALUES (:1,:2,:3,:4)""", fabriquer)
         print(f"  ✓ Completed: {len(fabriquer)} manufacturing records")
 
-        payer2 = gen_payer2(gammes_with_ids)
+        payer2 = gen_payer2(gammes_with_ids, cal_yyyy)
         cur.executemany("""INSERT INTO PAYER2(CODEG,ANNEE,INDICERETROCESSIONG)
                            VALUES (:1,:2,:3)""", payer2)
 
