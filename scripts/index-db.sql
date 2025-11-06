@@ -1,28 +1,28 @@
 DECLARE
   v_count NUMBER;
 
-  -- petite procédure pour créer un index seulement s'il n'existe pas,
-  -- et ignorer si la table est verrouillée
+  -- crée un index seulement s'il n'existe pas
   PROCEDURE create_index_if_needed(
     p_index_name  IN VARCHAR2,
     p_sql         IN VARCHAR2
   ) IS
   BEGIN
     -- l'index existe déjà ?
-    SELECT COUNT(*) INTO v_count
-    FROM USER_INDEXES
-    WHERE INDEX_NAME = UPPER(p_index_name);
+    SELECT COUNT(*)
+      INTO v_count
+      FROM USER_INDEXES
+     WHERE INDEX_NAME = UPPER(p_index_name);
 
     IF v_count = 0 THEN
       BEGIN
         EXECUTE IMMEDIATE p_sql;
       EXCEPTION
         WHEN OTHERS THEN
-          -- si c'est un lock (ORA-00054), on ignore et on continue
+          -- si table verrouillée -> on ignore
           IF SQLCODE = -54 THEN
             DBMS_OUTPUT.PUT_LINE('Index ' || p_index_name || ' ignoré : table verrouillée.');
           ELSE
-            RAISE; -- autre erreur → on laisse remonter
+            RAISE;
           END IF;
       END;
     ELSE
@@ -46,9 +46,14 @@ BEGIN
     'CREATE INDEX IDX_DEPARTEMENTS_CODEU ON DEPARTEMENTS (CODEU)'
   );
 
-<<<<<<< HEAD
-CREATE INDEX IDX_PV_NOM_TYPE ON POINTS_DE_VENTE (NOMPV, TYPEPV);
-=======
+  --------------------------------------------------
+  -- POINTS_DE_VENTE
+  --------------------------------------------------
+  create_index_if_needed(
+    'IDX_PV_NOM_TYPE',
+    'CREATE INDEX IDX_PV_NOM_TYPE ON POINTS_DE_VENTE (NOMPV, TYPEPV)'
+  );
+
   --------------------------------------------------
   -- PRODUITS
   --------------------------------------------------
@@ -196,7 +201,4 @@ CREATE INDEX IDX_PV_NOM_TYPE ON POINTS_DE_VENTE (NOMPV, TYPEPV);
     'IDX_TRAV_PV_MOIS_ANNEE',
     'CREATE INDEX IDX_TRAV_PV_MOIS_ANNEE ON TRAVAILLER_PT_VENTE (MOIS, ANNEE)'
   );
-
 END;
-/
->>>>>>> a5e2ecb (Requêtes SQL)

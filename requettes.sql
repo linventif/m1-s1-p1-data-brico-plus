@@ -77,7 +77,7 @@ FROM
     POINTS_DE_VENTE pv,
     TRAVAILLER_PT_VENTE tpv
 -- Lister uniquement les points de vente de type "GSB"
--- et inclure ceux qui n’ont pas d’employés grâce à la jointure externe (+)
+-- et inclure ceux qui n’ont pas d’employés avec à la jointure externe (+)
 WHERE
     LOWER(pv.TypePV) = 'gsb'
     AND pv.CodePV = tpv.CodePV(+)
@@ -210,8 +210,7 @@ ORDER BY u.NomU, d.NomD, a.CodeQ, e.NomE;
 -- 4️⃣  Donner le nom et le type du point de vente ayant le chiffre d’affaires
 --      le plus élevé pour le mois en cours
 --------------------------------------------------------------------------------
--- Sélectionner le code, le nom et le type des points de vente
--- ainsi que leur chiffre d'affaires (CA) pour le mois et l’année en cours
+-- Sélectionner le code, le nom et le type des points de vente et leurs chiffre d'affaires (CA) pour le mois et l’année en cours
 SELECT PV.CodePV, PV.NomPV, PV.TypePV, SUM(V.Qte_Vendue * F.PrixUnitP) as CA
 FROM POINTS_DE_VENTE PV, VENDRE V, FACTURER F
 -- Relier les points de vente aux ventes et aux factures correspondantes
@@ -296,14 +295,12 @@ ORDER BY
 SELECT DISTINCT
     p.CodeP,
     p.NomP
-FROM PRODUITS p, GAMME g, VENDRE v, POINTS_DE_VENTE pv
--- Relier chaque produit à sa gamme, sa vente et son point de vente
-WHERE p.CodeG = g.CodeG
-  AND v.CodeP = p.CodeP
+FROM PRODUITS p, VENDRE v, POINTS_DE_VENTE pv
+WHERE v.CodeP = p.CodeP
   AND pv.CodePV = v.CodePV
--- Ne garder que les ventes effectuées dans le département de la Haute-Garonne (31)
+-- Ventes en Haute-Garonne (31)
   AND pv.CPostalPV LIKE '31%'
--- Exclure les produits fabriqués ou assemblés dans une usine située en Haute-Garonne
+-- pas fabriqué dans le 31
   AND NOT EXISTS (
         SELECT *
         FROM FABRIQUER_ASSEMBLER1 fa, USINES u
@@ -317,22 +314,26 @@ ORDER BY p.CodeP;
 
 
 -- Requête de vérification :
--- Permet de visualiser les codes postaux des points de vente et des usines, pour confirmer que les produits vendus en Haute-Garonne ne sont pas fabriqués dans le même département
+-- Visualiser les CP des points de vente et des usines pour confirmer
+-- que les produits vendus en 31 ne sont pas fabriqués en 31
 SELECT DISTINCT
     p.CodeP,
     p.NomP,
-    pv.CPostalPV AS CP_Vente,
-    u.CPostalU   AS CP_Usine
-FROM PRODUITS p, GAMME g, VENDRE v, POINTS_DE_VENTE pv, FABRIQUER_ASSEMBLER1 fa, USINES u
--- Liaisons entre produits, gammes, ventes, usines et fabrications
-WHERE p.CodeG = g.CodeG
-  AND v.CodeP = p.CodeP
+    pv.CPostalPV as CP_Vente,
+    u.CPostalU AS CP_Usine_Fabrication
+FROM PRODUITS p,
+     VENDRE v,
+     POINTS_DE_VENTE pv,
+     FABRIQUER_ASSEMBLER1 fa,
+     USINES u
+WHERE v.CodeP = p.CodeP
   AND pv.CodePV = v.CodePV
-  AND fa.CodeP = p.CodeP
-  AND u.CodeU = fa.CodeU
--- Filtrer les ventes dans le département 31
+  -- on accroche éventuellement une fabrication
+  AND fa.CodeP(+) = p.CodeP
+  AND u.CodeU(+)  = fa.CodeU
+  -- ventes en Haute-Garonne (31)
   AND pv.CPostalPV LIKE '31%'
--- Exclure les produits fabriqués dans une usine du même département
+  -- pas fabriqué dans le 31 (même test que la requête principale)
   AND NOT EXISTS (
         SELECT *
         FROM FABRIQUER_ASSEMBLER1 fa2, USINES u2
@@ -340,8 +341,9 @@ WHERE p.CodeG = g.CodeG
           AND fa2.CodeU = u2.CodeU
           AND u2.CPostalU LIKE '31%'
   )
--- Trier par code produit et codes postaux pour faciliter la vérification
-ORDER BY p.CodeP, pv.CPostalPV, u.CPostalU;
+ORDER BY
+    p.CodeP,
+    u.CPostalU;
 
 
 
@@ -385,17 +387,17 @@ FROM EMPLOYES emp,
      ) per,
      -- paramètres de paie annuels (fixe + indice)
      PAYER1 pay,
-     -- heures travaillées en usine dans le mois
+     -- somme heures travaillées en usine dans le mois
      ( SELECT CodeE, Mois, Annee, SUM(NbHeures_U) AS Heures_Usine
        FROM TRAVAILLER_USINE
        GROUP BY CodeE, Mois, Annee
      ) heu_usine,
-     -- heures travaillées en point de vente dans le mois
+     -- somme heures travaillées en point de vente dans le mois
      ( SELECT CodeE, Mois, Annee, SUM(NbHeures_PV) AS Heures_PV
        FROM TRAVAILLER_PT_VENTE
        GROUP BY CodeE, Mois, Annee
      ) heu_pv,
-     -- partie objectifs / rétrocession sur les ventes du mois
+     -- partie objectifs en gros c'estla rétrocession sur les ventes du mois
      ( SELECT v.CodeE,
               v.Mois,
               v.Annee,
@@ -437,43 +439,43 @@ SELECT
     m.Annee,
     m.Mois,
 
-    /* 1. partie fixe */
-    p1.FixeMensuelE                                 AS Partie_Fixe,
+    --1. partie fixe
+    p1.FixeMensuelE AS Partie_Fixe,
 
-    /* 2. partie travail (usine + point de vente) */
-    (p1.IndiceSalE * NVL(hu.H_u, 0))                AS Partie_Travail_Usine,
-    (p1.IndiceSalE * NVL(hpv.H_pv, 0))              AS Partie_Travail_PV,
+    --2. partie travail (usine + point de vente)
+    (p1.IndiceSalE * NVL(hu.H_u, 0)) AS Partie_Travail_Usine,
+    (p1.IndiceSalE * NVL(hpv.H_pv, 0)) AS Partie_Travail_PV,
 
-    /* 3. partie objectifs / rétrocession */
-    NVL(v.CA_retro, 0)                              AS Partie_Objectifs,
+    --3. partie objectifs / rétrocession
+    NVL(v.CA_retro, 0) AS Partie_Objectifs,
 
-    /* salaire total = somme des 3 blocs */
+    --salaire total = somme des 3 blocs
     p1.FixeMensuelE
       + (p1.IndiceSalE * NVL(hu.H_u, 0))
       + (p1.IndiceSalE * NVL(hpv.H_pv, 0))
-      + NVL(v.CA_retro, 0)                          AS Salaire_Mensuel_Employe
+      + NVL(v.CA_retro, 0) AS Salaire_Mensuel_Employe
 
 FROM EMPLOYES e,
-     /* même ensemble (CodeE, Mois, Annee) que dans la requête principale */
+     --même ensemble (CodeE, Mois, Annee) que dans la requête principale
      ( SELECT CodeE, Mois, Annee FROM Travailler_Usine
        UNION
        SELECT CodeE, Mois, Annee FROM Travailler_Pt_Vente
        UNION
        SELECT CodeE, Mois, Annee FROM Vendre
      ) m,
-     /* paramètres annuels (fixe + indice) */
+     --paramètres annuels (fixe + indice)
      PAYER1 p1,
-     /* heures en usine */
+     --heures en usine
      ( SELECT CodeE, Mois, Annee, SUM(NbHeures_U) AS H_u
        FROM Travailler_Usine
        GROUP BY CodeE, Mois, Annee
      ) hu,
-     /* heures en point de vente */
+     --heures en point de vente
      ( SELECT CodeE, Mois, Annee, SUM(NbHeures_PV) AS H_pv
        FROM Travailler_Pt_Vente
        GROUP BY CodeE, Mois, Annee
      ) hpv,
-     /* rétro mensuelle par employé */
+     --rétro mensuelle par employé
      ( SELECT v.CodeE, v.Mois, v.Annee,
               SUM(p2.IndiceRetrocessionG * v.Qte_Vendue * f.PrixUnitP) AS CA_retro
        FROM Vendre v, Facturer f, Produits p, Payer2 p2
@@ -807,62 +809,122 @@ ORDER BY
 --------------------------------------------------------------------------------
 -- Requête en plus 1 // Détection des anomalies sur les salaires (méthode IQR)
 --------------------------------------------------------------------------------
-WITH salaires AS (
-    SELECT t.CODEE, t.ANNEE, t.MOIS,
-        (p1.FIXEMENSUELE * p1.INDICESALE) AS salaire_mensuel
-    FROM
-        PAYER1 p1, TRAVAILLER_USINE t
-    WHERE
-        p1.CODEE = t.CODEE
-        AND p1.ANNEE = t.ANNEE
-),
-stats AS (
-    SELECT
-        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salaire_mensuel) AS q1,
-        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salaire_mensuel) AS q3,
-        ( PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salaire_mensuel)
-        - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salaire_mensuel) ) AS iqr
-    FROM salaires
-)
-SELECT
-    sals.CODEE,
-    sals.ANNEE,
-    sals.MOIS,
-    sals.salaire_mensuel
-FROM
-    salaires sals,
-    stats st
-WHERE
-    sals.salaire_mensuel < (st.q1 - 1.5 * st.iqr)
-    OR sals.salaire_mensuel > (st.q3 + 1.5 * st.iqr)
-ORDER BY
-    sals.salaire_mensuel DESC;
-
-
---------------------------------------------------------------------------------
--- Requête en plus 2 // Statistiques descriptives sur les salaires et fenêtrage par employé (Agrégation avancée)
---------------------------------------------------------------------------------
 WITH m AS (
-    /* tous les (employé, mois, année) où il s'est passé quelque chose */
+    -- tous les (employé, mois, année) où il s'est passé quelque chose
     SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_USINE
     UNION
     SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_PT_VENTE
     UNION
     SELECT CODEE, MOIS, ANNEE FROM VENDRE
 ),
-/* heures totales en usine par employé / mois / année */
+-- heures totales en usine par employé / mois / année
+heures_usine AS (
+    SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_U) AS HEURES_USINE
+    FROM TRAVAILLER_USINE
+    GROUP BY CODEE, MOIS, ANNEE
+),
+-- heures totales en point de vente par employé / mois / année
+heures_pv AS (
+    SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_PV) AS HEURES_PV
+    FROM TRAVAILLER_PT_VENTE
+    GROUP BY CODEE, MOIS, ANNEE
+),
+-- partie objectifs (rétro) par employé / mois / année
+retro AS (
+    SELECT
+        ve.CODEE,
+        ve.MOIS,
+        ve.ANNEE,
+        SUM(p2.INDICERETROCESSIONG * ve.QTE_VENDUE * f.PRIXUNITP) AS CA_RETRO
+    FROM VENDRE ve, FACTURER f, PRODUITS p, PAYER2 p2
+    WHERE f.CODEP = ve.CODEP
+      AND f.MOIS  = ve.MOIS
+      AND f.ANNEE = ve.ANNEE
+      AND p.CODEP = ve.CODEP
+      AND p2.CODEG = p.CODEG
+      AND p2.ANNEE = ve.ANNEE
+    GROUP BY ve.CODEE, ve.MOIS, ve.ANNEE
+),
+-- calcul du salaire mensuel complet
+salaires AS (
+    SELECT
+        m.ANNEE,
+        m.MOIS,
+        m.CODEE,
+        p1.FIXEMENSUELE
+          + (p1.INDICESALE * NVL(heures_usine.HEURES_USINE, 0))
+          + (p1.INDICESALE * NVL(heures_pv.HEURES_PV, 0))
+          + NVL(retro.CA_RETRO, 0) AS SALAIRE_MENSUEL
+    FROM
+        m,
+        PAYER1 p1,
+        heures_usine,
+        heures_pv,
+        retro
+    WHERE
+        p1.CODEE = m.CODEE
+        AND p1.ANNEE = m.ANNEE
+
+        AND heures_usine.CODEE(+) = m.CODEE
+        AND heures_usine.MOIS(+)  = m.MOIS
+        AND heures_usine.ANNEE(+) = m.ANNEE
+
+        AND heures_pv.CODEE(+) = m.CODEE
+        AND heures_pv.MOIS(+)  = m.MOIS
+        AND heures_pv.ANNEE(+) = m.ANNEE
+
+        AND retro.CODEE(+) = m.CODEE
+        AND retro.MOIS(+)  = m.MOIS
+        AND retro.ANNEE(+) = m.ANNEE
+),
+-- bornes IQR calculées sur ces salaires-là
+stats AS (
+    SELECT
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY SALAIRE_MENSUEL) AS q1,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY SALAIRE_MENSUEL) AS q3,
+        ( PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY SALAIRE_MENSUEL)
+        - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY SALAIRE_MENSUEL) ) AS iqr
+    FROM salaires
+)
+SELECT
+    s.ANNEE,
+    s.MOIS,
+    s.CODEE,
+    s.SALAIRE_MENSUEL
+FROM
+    salaires s,
+    stats st
+WHERE
+      s.SALAIRE_MENSUEL < (st.q1 - 1.5 * st.iqr)
+   OR s.SALAIRE_MENSUEL > (st.q3 + 1.5 * st.iqr)
+ORDER BY
+    s.SALAIRE_MENSUEL DESC;
+
+
+--------------------------------------------------------------------------------
+-- Requête en plus 2 // Statistiques descriptives sur les salaires et fenêtrage par employé (Agrégation avancée)
+--------------------------------------------------------------------------------
+WITH m AS (
+    --tous les (employé, mois, année) où il s'est passé quelque chose
+    SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_USINE
+    UNION
+    SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_PT_VENTE
+    UNION
+    SELECT CODEE, MOIS, ANNEE FROM VENDRE
+),
+--heures totales en usine par employé / mois / année
 hu AS (
     SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_U) AS Heures_Usine
     FROM TRAVAILLER_USINE
     GROUP BY CODEE, MOIS, ANNEE
 ),
-/* heures totales en point de vente par employé / mois / année */
+--heures totales en point de vente par employé / mois / année
 hpv AS (
     SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_PV) AS Heure_PointVente
     FROM TRAVAILLER_PT_VENTE
     GROUP BY CODEE, MOIS, ANNEE
 ),
-/* partie objectif (rétro) par employé / mois / année */
+--partie objectif (rétro) par employé / mois / année
 v AS (
     SELECT
         ve.CODEE,
@@ -878,7 +940,7 @@ v AS (
       AND p2.ANNEE = ve.ANNEE
     GROUP BY ve.CODEE, ve.MOIS, ve.ANNEE
 ),
-/* salaire unique par employé / mois / année */
+--salaire unique par employé / mois / année
 salaires AS (
     SELECT
         m.ANNEE,
@@ -950,40 +1012,97 @@ ORDER BY s.ANNEE, s.MOIS, s.CODEE;
 --------------------------------------------------------------------------------
 -- Requête en plus de véfification : Nombre de tables, nombre de colonnes et nombre de lignes par table
 --------------------------------------------------------------------------------
+BEGIN
+  DBMS_STATS.GATHER_SCHEMA_STATS(USER);
+END;
+
 SELECT
-    t.table_name         AS NomTable,
+    t.table_name AS NomTable,
     (SELECT COUNT(*)
        FROM user_tab_columns c
-      WHERE c.table_name = t.table_name)        AS NbColonnes,
-    NVL(t.num_rows, 0)   AS NbLignes
+      WHERE c.table_name = t.table_name) AS NbColonnes,
+    NVL(t.num_rows, 0) AS NbLignes
 FROM user_tables t
 ORDER BY t.table_name;
+
+SELECT 'ASSEMBLER' AS nom_table, COUNT(*) AS nb_lignes FROM ASSEMBLER
+UNION ALL
+SELECT 'AUTORISER' AS nom_table, COUNT(*) AS nb_lignes FROM AUTORISER
+UNION ALL
+SELECT 'AVOIR_TYPE' AS nom_table, COUNT(*) AS nb_lignes FROM AVOIR_TYPE
+UNION ALL
+SELECT 'CALENDRIER1' AS nom_table, COUNT(*) AS nb_lignes FROM CALENDRIER1
+UNION ALL
+SELECT 'CALENDRIER2'AS nom_table, COUNT(*) AS nb_lignes FROM CALENDRIER2
+UNION ALL
+SELECT 'CALENDRIER3'AS nom_table, COUNT(*) AS nb_lignes FROM CALENDRIER3
+UNION ALL
+SELECT 'CALENDRIER4' AS nom_table, COUNT(*) AS nb_lignes FROM CALENDRIER4
+UNION ALL
+SELECT 'DEPARTEMENTS' AS nom_table, COUNT(*) AS nb_lignes FROM DEPARTEMENTS
+UNION ALL
+SELECT 'DIRIGER' AS nom_table, COUNT(*) AS nb_lignes FROM DIRIGER
+UNION ALL
+SELECT 'EMPLOYES' AS nom_table, COUNT(*) AS nb_lignes FROM EMPLOYES
+UNION ALL
+SELECT 'FABRIQUER_ASSEMBLER1' AS nom_table, COUNT(*) AS nb_lignes FROM FABRIQUER_ASSEMBLER1
+UNION ALL
+SELECT 'FACTURER' AS nom_table, COUNT(*) AS nb_lignes FROM FACTURER
+UNION ALL
+SELECT 'GAMME' AS nom_table, COUNT(*) AS nb_lignes FROM GAMME
+UNION ALL
+SELECT 'PAYER1' AS nom_table, COUNT(*) AS nb_lignes FROM PAYER1
+UNION ALL
+SELECT 'PAYER2' AS nom_table, COUNT(*) AS nb_lignes FROM PAYER2
+UNION ALL
+SELECT 'POINTS_DE_VENTE' AS nom_table, COUNT(*) AS nb_lignes FROM POINTS_DE_VENTE
+UNION ALL
+SELECT 'POSSEDER' AS nom_table, COUNT(*) AS nb_lignes FROM POSSEDER
+UNION ALL
+SELECT 'PRODUITS' AS nom_table, COUNT(*) AS nb_lignes FROM PRODUITS
+UNION ALL
+SELECT 'QUALIFICATIONS' AS nom_table, COUNT(*) AS nb_lignes FROM QUALIFICATIONS
+UNION ALL
+SELECT 'RESPONSABLE' AS nom_table, COUNT(*) AS nb_lignes FROM RESPONSABLE
+UNION ALL
+SELECT 'TRAVAILLER_PT_VENTE' AS nom_table, COUNT(*) AS nb_lignes FROM TRAVAILLER_PT_VENTE
+UNION ALL
+SELECT 'TRAVAILLER_USINE' AS nom_table, COUNT(*) AS nb_lignes FROM TRAVAILLER_USINE
+UNION ALL
+SELECT 'TYPEU' AS nom_table, COUNT(*) AS nb_lignes FROM TYPEU
+UNION ALL
+SELECT 'USINES' AS nom_table, COUNT(*) AS nb_lignes FROM USINES
+UNION ALL
+SELECT 'VENDRE' AS nom_table, COUNT(*) AS nb_lignes FROM VENDRE
+ORDER BY nom_table;
+
+
 
 
 ------------------------------------------------------
 --Requête d'extraction de données pour analyse salaire
 ------------------------------------------------------
 WITH m AS (
-    /* tous les (employé, mois, année) où il s'est passé quelque chose */
+    --tous les (employé, mois, année) où il s'est passé quelque chose
     SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_USINE
     UNION
     SELECT CODEE, MOIS, ANNEE FROM TRAVAILLER_PT_VENTE
     UNION
     SELECT CODEE, MOIS, ANNEE FROM VENDRE
 ),
-/* heures totales en usine */
+--heures totales en usine
 hu AS (
     SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_U) AS H_U
     FROM TRAVAILLER_USINE
     GROUP BY CODEE, MOIS, ANNEE
 ),
-/* heures totales en point de vente */
+--heures totales en point de vente
 hpv AS (
     SELECT CODEE, MOIS, ANNEE, SUM(NBHEURES_PV) AS H_PV
     FROM TRAVAILLER_PT_VENTE
     GROUP BY CODEE, MOIS, ANNEE
 ),
-/* partie objectifs = rétro sur les ventes du mois */
+--partie objectifs = rétro sur les ventes du mois
 v AS (
     SELECT
         ve.CODEE,
@@ -999,7 +1118,7 @@ v AS (
       AND p2.ANNEE = ve.ANNEE
     GROUP BY ve.CODEE, ve.MOIS, ve.ANNEE
 ),
-/* quantité vendue dans le mois par employé */
+--quantité vendue dans le mois par employé
 ventes_mois AS (
     SELECT
         v.CODEE,
@@ -1009,7 +1128,7 @@ ventes_mois AS (
     FROM VENDRE v
     GROUP BY v.CODEE, v.MOIS, v.ANNEE
 ),
-/* quantité fabriquée dans le mois, rattachée à l'employé via l'usine où il a travaillé */
+--quantité fabriquée dans le mois, rattachée à l'employé via l'usine où il a travaillé
 fab_mois AS (
     SELECT
         tu.CODEE,
@@ -1030,45 +1149,45 @@ fab_mois AS (
         EXTRACT(YEAR  FROM fa.DATEFAB)
 )
 SELECT
-    /* temps + employé */
+    --temps + employé
     m.ANNEE,
     m.MOIS,
     e.CODEE,
     e.NOME,
     e.PRENOME,
 
-    /* adresses perso */
+    --adresses perso
     e.CPOSTALPERSE,
     e.VILLEPERSE,
 
-    /* adresses pro complètes */
+    --adresses pro complètes
     e.RUEPROE,
     e.CPOSTALPROE,
     e.VILLEPROE,
 
-    /* qualifications (via POSSEDER) */
+    --qualifications (via POSSEDER)
     q.CODEQ,
     q.NOMQ,
     q.TAUXMINQ,
 
-    /* direction de département (facultatif) */
+    --direction de département (facultatif)
     dpt.CODED       AS CODE_DEPT_DIRIGE,
     dpt.NOMD        AS NOM_DEPT_DIRIGE,
     dir.DATEDEBUTDIR,
 
-    /* responsabilité de gamme (facultatif) */
+    --responsabilité de gamme (facultatif)
     r.CODEG         AS CODE_GAMME_RESP,
     g.NOMG          AS NOM_GAMME_RESP,
 
-    /* quantités du mois */
+    --quantités du mois
     NVL(ventes_mois.QTE_VENDUE_MOIS, 0) AS QTE_VENDUE_MOIS,
     NVL(fab_mois.QTE_FAB_MOIS, 0)       AS QTE_FABRIQUEE_MOIS,
 
-    /* heures du mois (ce que tu voulais rajouter) */
+    --heures du mois (ce que tu voulais rajouter)
     NVL(hu.H_U, 0)  AS HEURES_USINE_MOIS,
     NVL(hpv.H_PV, 0) AS HEURES_PV_MOIS,
 
-    /* --- décomposition du salaire (à la fin) --- */
+    -- --- décomposition du salaire (à la fin) ---
     p1.FIXEMENSUELE                                      AS PARTIE_FIXE,
     (p1.INDICESALE * NVL(hu.H_U, 0))                     AS PARTIE_TRAVAIL_USINE,
     (p1.INDICESALE * NVL(hpv.H_PV, 0))                   AS PARTIE_TRAVAIL_PV,
@@ -1094,16 +1213,16 @@ FROM
     RESPONSABLE r,
     GAMME g
 WHERE
-    /* base */
+    --base
     m.CODEE = e.CODEE
     AND p1.CODEE = e.CODEE
     AND p1.ANNEE = m.ANNEE
 
-    /* qualification (peut y en avoir plusieurs) */
+    --qualification (peut y en avoir plusieurs)
     AND pos.CODEE(+) = e.CODEE
     AND q.CODEQ(+)   = pos.CODEQ
 
-    /* heures */
+    --heures
     AND hu.CODEE(+) = m.CODEE
     AND hu.MOIS(+)  = m.MOIS
     AND hu.ANNEE(+) = m.ANNEE
@@ -1112,28 +1231,28 @@ WHERE
     AND hpv.MOIS(+)  = m.MOIS
     AND hpv.ANNEE(+) = m.ANNEE
 
-    /* ventes / rétro (partie objectifs) */
+    --ventes / rétro (partie objectifs)
     AND v.CODEE(+) = m.CODEE
     AND v.MOIS(+)  = m.MOIS
     AND v.ANNEE(+) = m.ANNEE
 
-    /* quantités vendues */
+    --quantités vendues
     AND ventes_mois.CODEE(+) = m.CODEE
     AND ventes_mois.MOIS(+)  = m.MOIS
     AND ventes_mois.ANNEE(+) = m.ANNEE
 
-    /* quantités fabriquées */
+    --quantités fabriquées
     AND fab_mois.CODEE(+) = m.CODEE
     AND fab_mois.MOIS(+)  = m.MOIS
     AND fab_mois.ANNEE(+) = m.ANNEE
 
-    /* direction d'un département sur l'année du mois */
+    --direction d'un département sur l'année du mois
     AND dir.CODEE(+) = e.CODEE
     AND dpt.CODED(+) = dir.CODED
     AND (dir.DATEDEBUTDIR IS NULL
          OR EXTRACT(YEAR FROM dir.DATEDEBUTDIR) <= m.ANNEE)
 
-    /* responsable de gamme sur l'année */
+    --responsable de gamme sur l'année
     AND r.CODEE(+) = e.CODEE
     AND r.ANNEE(+) = m.ANNEE
     AND g.CODEG(+) = r.CODEG
