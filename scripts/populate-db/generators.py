@@ -4,11 +4,23 @@ Générateurs de données pour toutes les tables
 """
 
 import random
-from config import NOMBRE_EMPLOYES_PAR_POINT_VENTE, NOMBRE_EMPLOYES_PAR_USINE, NOMBRE_POINTS_VENTE, NOMBRE_USINES, PRODUITS_CHANCE_DOUBLE_MARQUE
+from config import (
+    NOMBRE_USINES, NOMBRE_POINTS_VENTE,
+    FACTORY_SPECIALIZED_MIN, FACTORY_SPECIALIZED_MAX,
+    FACTORY_SEMI_SPECIALIZED_MIN, FACTORY_SEMI_SPECIALIZED_MAX,
+    FACTORY_GENERAL_MIN, FACTORY_GENERAL_MAX,
+    PV_EXPRESS_MIN, PV_EXPRESS_MAX,
+    PV_GSB_MIN, PV_GSB_MAX,
+    PV_EXPRESS_PROBABILITY,
+    PRODUITS_VARIANTS_MIN, PRODUITS_VARIANTS_MAX
+)
 from constants import *
 from utils import getRandomFullName, getRandomPhone, getRandomStreet, getRandomStreetNearby
 
-def gen_employes(n=NOMBRE_EMPLOYES_PAR_USINE * NOMBRE_USINES + NOMBRE_POINTS_VENTE * NOMBRE_EMPLOYES_PAR_POINT_VENTE):
+def gen_employes(n=None):
+    """Legacy function - use gen_employes_by_factory_size instead"""
+    if n is None:
+        n = 1000  # Default fallback
     rows = []
     for code in range(1, n+1):
         fullname = getRandomFullName()
@@ -84,21 +96,25 @@ def gen_employes_by_factory_size(factory_info, pv_info):
     print(f"\n🏪 Generating point of sale employees...")
     pv_count = 0
     
-    for codepv, type_pv, pv_address in pv_info:
+    for codepv, pv_data in pv_info.items():
         # Determine number of employees based on type
-        if type_pv == "Brico-Express":
-            num_employees = random.randint(8, 15)
+        is_express = pv_data['is_express']
+        if is_express:
+            num_employees = random.randint(PV_EXPRESS_MIN, PV_EXPRESS_MAX)
         else:  # GSB
-            num_employees = random.randint(75, 150)
+            num_employees = random.randint(PV_GSB_MIN, PV_GSB_MAX)
+        
+        # Get address info for nearby professional address
+        pv_address = {
+            'postal_code': pv_data['postal_code'],
+            'city': pv_data['city']
+        }
         
         for _ in range(num_employees):
             fullname = getRandomFullName()
             streetPerso = getRandomStreet()
             # Professional address near point of sale
-            if pv_address:
-                streetPro = getRandomStreetNearby(pv_address)
-            else:
-                streetPro = getRandomStreetNearby(streetPerso)
+            streetPro = getRandomStreetNearby(pv_address)
             
             # Limit all strings to 50 characters
             rows.append((
@@ -238,7 +254,7 @@ def gen_points_vente(n=NOMBRE_POINTS_VENTE):
     pv_info = {}
     print(f"\n🏪 Generating {n} points of sale...")
     for code in range(1, n+1):
-        is_express = random.random() < 0.7
+        is_express = random.random() < PV_EXPRESS_PROBABILITY
         street_info = getRandomStreet()
         if is_express:
             nom_pv = f"Brico-Express {street_info['city']}"[:50]
@@ -279,9 +295,9 @@ def gen_produits():
     # Créer un mapping des noms de gamme vers leur code (G01, G02, etc.)
     gamme_to_code = {g: f"G{str(i).zfill(2)}" for i, g in enumerate(GAMMES, start=1)}
 
-    # Nombre de variantes par produit (modifiable)
-    NB_VARIANTS_MIN = 2
-    NB_VARIANTS_MAX = 4
+    # Nombre de variantes par produit (from config)
+    NB_VARIANTS_MIN = PRODUITS_VARIANTS_MIN
+    NB_VARIANTS_MAX = PRODUITS_VARIANTS_MAX
 
     total_processed = 0
     for nom_produit, gamme_nom, type_usine, composants in PRODUITS:

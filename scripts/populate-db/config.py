@@ -45,12 +45,31 @@ SERVICE = os.getenv("ORACLE_SERVICE")
 USER = os.getenv("ORACLE_USER")
 PASS = os.getenv("ORACLE_PASS")
 
-# Configurations de génération de données
-NOMBRE_EMPLOYES_PAR_USINE = int(os.getenv("NOMBRE_EMPLOYES_PAR_USINE", "10"))
-NOMBRE_EMPLOYES_PAR_POINT_VENTE = int(os.getenv("NOMBRE_EMPLOYES_PAR_POINT_VENTE", "5"))
+# Basic Generation Counts
 NOMBRE_USINES = int(os.getenv("NOMBRE_USINES", "15"))
 NOMBRE_POINTS_VENTE = int(os.getenv("NOMBRE_POINTS_VENTE", "50"))
-NOMBRE_PRODUITS = int(os.getenv("NOMBRE_PRODUITS", "100"))
-PRODUITS_CHANCE_DOUBLE_MARQUE = float(os.getenv("PRODUITS_CHANCE_DOUBLE_MARQUE", "0.3"))
+
+# Factory Employee Counts (based on specialization)
+FACTORY_SPECIALIZED_MIN = int(os.getenv("FACTORY_SPECIALIZED_MIN", "300"))
+FACTORY_SPECIALIZED_MAX = int(os.getenv("FACTORY_SPECIALIZED_MAX", "500"))
+FACTORY_SEMI_SPECIALIZED_MIN = int(os.getenv("FACTORY_SEMI_SPECIALIZED_MIN", "200"))
+FACTORY_SEMI_SPECIALIZED_MAX = int(os.getenv("FACTORY_SEMI_SPECIALIZED_MAX", "350"))
+FACTORY_GENERAL_MIN = int(os.getenv("FACTORY_GENERAL_MIN", "150"))
+FACTORY_GENERAL_MAX = int(os.getenv("FACTORY_GENERAL_MAX", "250"))
+
+# Point of Sale Employee Counts
+PV_EXPRESS_MIN = int(os.getenv("PV_EXPRESS_MIN", "8"))
+PV_EXPRESS_MAX = int(os.getenv("PV_EXPRESS_MAX", "15"))
+PV_GSB_MIN = int(os.getenv("PV_GSB_MIN", "75"))
+PV_GSB_MAX = int(os.getenv("PV_GSB_MAX", "150"))
+
+# Point of Sale Type Probability
+PV_EXPRESS_PROBABILITY = float(os.getenv("PV_EXPRESS_PROBABILITY", "0.7"))
+
+# Product Generation
+PRODUITS_VARIANTS_MIN = int(os.getenv("PRODUITS_VARIANTS_MIN", "2"))
+PRODUITS_VARIANTS_MAX = int(os.getenv("PRODUITS_VARIANTS_MAX", "4"))
+
+# Calendar Settings
 CALENDRIER_DATE_DEBUT = os.getenv("CALENDRIER_DATE_DEBUT", "2000-01-01")
 CALENDRIER_DATE_FIN = os.getenv("CALENDRIER_DATE_FIN", "2025-10-31")

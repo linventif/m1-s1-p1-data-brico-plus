@@ -5,6 +5,11 @@ Générateurs pour les tables de relation (associations)
 
 import random
 from constants import *
+from config import (
+    FACTORY_SPECIALIZED_MIN, FACTORY_SPECIALIZED_MAX,
+    FACTORY_SEMI_SPECIALIZED_MIN, FACTORY_SEMI_SPECIALIZED_MAX,
+    FACTORY_GENERAL_MIN, FACTORY_GENERAL_MAX
+)
 
 def gen_departements_with_ids(usines_with_ids):
     rows = []
@@ -122,9 +127,9 @@ def gen_assembler_with_ids(produits_rows):
 def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids, usines_full_data):
     """
     Generate factory type assignments with specialization and size classification.
-    - Specialized factories: focus on 1 type (larger, 300-500 employees)
-    - Semi-specialized: 2 types (medium, 200-350 employees)
-    - General factories: 3-4 types (smaller, 150-250 employees)
+    - Specialized factories: focus on 1 type (configurable employee count)
+    - Semi-specialized: 2 types (configurable employee count)
+    - General factories: 3-4 types (configurable employee count)
 
     Parameters:
     - usines_with_ids: [(CODEU, NOMU), ...]
@@ -156,14 +161,14 @@ def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids, usines_full_data):
 
     idx = 0
 
-    # Specialized factories: 1 type, 300-500 employees
+    # Specialized factories: 1 type, configurable employee count
     for i in range(num_specialized):
         if idx >= len(factory_list):
             break
         u_id, u_nom = factory_list[idx]
         selected_type = random.choice(typeu_with_ids)
         rows.append((u_id, selected_type[0]))
-        taille = random.randint(300, 500)
+        taille = random.randint(FACTORY_SPECIALIZED_MIN, FACTORY_SPECIALIZED_MAX)
         factory_info[u_id] = {
             "classification": "specialized",
             "taille": taille,
@@ -172,7 +177,7 @@ def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids, usines_full_data):
         }
         idx += 1
 
-    # Semi-specialized factories: 2 types, 200-350 employees
+    # Semi-specialized factories: 2 types, configurable employee count
     for i in range(num_semi):
         if idx >= len(factory_list):
             break
@@ -180,7 +185,7 @@ def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids, usines_full_data):
         selected_types = random.sample(typeu_with_ids, k=2)
         for t_id, t_nom in selected_types:
             rows.append((u_id, t_id))
-        taille = random.randint(200, 350)
+        taille = random.randint(FACTORY_SEMI_SPECIALIZED_MIN, FACTORY_SEMI_SPECIALIZED_MAX)
         factory_info[u_id] = {
             "classification": "semi-specialized",
             "taille": taille,
@@ -189,7 +194,7 @@ def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids, usines_full_data):
         }
         idx += 1
 
-    # General factories: 3-4 types, 150-250 employees
+    # General factories: 3-4 types, configurable employee count
     for i in range(num_general):
         if idx >= len(factory_list):
             break
@@ -198,7 +203,7 @@ def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids, usines_full_data):
         selected_types = random.sample(typeu_with_ids, k=num_types)
         for t_id, t_nom in selected_types:
             rows.append((u_id, t_id))
-        taille = random.randint(150, 250)
+        taille = random.randint(FACTORY_GENERAL_MIN, FACTORY_GENERAL_MAX)
         factory_info[u_id] = {
             "classification": "general",
             "taille": taille,
