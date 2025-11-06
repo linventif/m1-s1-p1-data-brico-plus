@@ -108,10 +108,10 @@ def main():
         payer1 = gen_payer1_with_ids(employes_ids, cal_yyyy)
         cur.executemany("""INSERT INTO PAYER1(CODEE,ANNEE,FIXEMENSUELE,INDICESALE)
                            VALUES (:1,:2,:3,:4)""", payer1)
-        '''
 
-        # autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
-        # cur.executemany("INSERT INTO AUTORISER(CODEQ,CODED) VALUES (:1,:2)", autoriser)
+        autoriser = gen_autoriser_with_ids(qualifs_rows, departements_rows)
+        cur.executemany("INSERT INTO AUTORISER(CODEQ,CODED) VALUES (:1,:2)", autoriser)
+        '''
 
         # assembler = gen_assembler_with_ids(produits_ids)
         # cur.executemany("""INSERT INTO ASSEMBLER(CODEP_EST_COMPOSE,CODEP_COMPOSE,QTE_ASSEMBL)
@@ -119,15 +119,6 @@ def main():
 
         # avoir_type = gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids)
         # cur.executemany("INSERT INTO AVOIR_TYPE(CODEU,CODETU) VALUES (:1,:2)", avoir_type)
-
-        # cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
-        # employes_ids = [row[0] for row in cur.fetchall()]
-
-        # cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
-        # departements_ids = [row[0] for row in cur.fetchall()]
-
-        # cur.execute("DELETE FROM PAYER1")
-
 
         # fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates)
         # cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)
@@ -144,7 +135,6 @@ def main():
         # vendre = gen_vendre_with_ids(employes_ids, pvs_ids, produits_ids, cal3)
         # cur.executemany("""INSERT INTO VENDRE(CODEE,CODEPV,CODEP,MOIS,ANNEE,QTE_VENDUE)
         #                    VALUES (:1,:2,:3,:4,:5,:6)""", vendre)
-
 
         # trav_u = gen_travailler_usine_with_ids(employes_ids, departements_ids, cal3)
         # cur.executemany("""INSERT INTO TRAVAILLER_USINE(CODEE,CODED,MOIS,ANNEE,NBHEURES_U)

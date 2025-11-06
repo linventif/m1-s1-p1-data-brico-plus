@@ -149,12 +149,93 @@ def gen_diriger_with_ids(employes_ids, departements_ids, cal2_dates):
 
     return rows
 
-def gen_autoriser_with_ids(qualifs_ids, departements_ids):
+def gen_autoriser_with_ids(qualifs_rows, departements_rows):
+    """
+    Generate authorization rules linking qualifications to departments.
+    Each department requires certain minimum qualification levels:
+    - Direction, Finance, RH: minimum Licence (level 6+)
+    - Fabrication, Assemblage: minimum BTS/DUT (level 5+)
+    - Expédition, Logistique: minimum Bac Pro (level 4+)
+
+    Parameters:
+    - qualifs_rows: [(CODEQ, NOMQ), ...] from database
+    - departements_rows: [(CODED, NOMD, CODEU), ...] from database
+
+    Returns: [(CODEQ, CODED), ...]
+    """
+    from constants import QUALIFICATIONS
+
     rows = []
-    for d in random.sample(departements_ids, k=min(500, len(departements_ids))):
-        for q in random.sample(qualifs_ids, k=random.randint(3, 8)):
-            rows.append((q, d))
-    return rows[:500]
+
+    # Build qualification level mapping
+    qualif_name_to_level = {}
+    for level, quals in QUALIFICATIONS.items():
+        for q in quals:
+            diplome = q[0]
+            qualif_name_to_level[diplome] = level
+
+    # Department requirements (minimum qualification level)
+    dept_requirements = {
+        "direction": 6,      # Licence minimum
+        "finance": 6,        # Licence minimum
+        "RH": 6,            # Licence minimum
+        "fabrication": 5,   # BTS/DUT minimum
+        "assemblage": 5,    # BTS/DUT minimum
+        "expédition": 4,    # Bac Pro minimum
+        "logistique": 4,    # Bac Pro minimum
+    }
+
+    # Build qualifications by level
+    qualifs_by_level = {}
+    for codeq, nomq in qualifs_rows:
+        level = qualif_name_to_level.get(nomq)
+        if level:
+            if level not in qualifs_by_level:
+                qualifs_by_level[level] = []
+            qualifs_by_level[level].append((codeq, nomq))
+
+    # For each department
+    for dept_info in departements_rows:
+        coded = dept_info[0]
+        nomd = dept_info[1]
+
+        # Determine minimum level required
+        min_level = dept_requirements.get(nomd, 3)  # Default to CAP/BEP
+
+        # Get eligible qualification levels
+        eligible_levels = [lvl for lvl in qualifs_by_level.keys() if lvl >= min_level]
+
+        # Number of qualifications to authorize (more for higher-level departments)
+        if min_level >= 6:
+            target = random.randint(5, 10)  # Direction/Finance/RH need more qualifications
+        elif min_level >= 5:
+            target = random.randint(4, 8)   # Fabrication/Assemblage
+        else:
+            target = random.randint(3, 6)   # Expédition/Logistique
+
+        authorized = []
+
+        # Prioritize higher levels but include some from lower levels too
+        for level in sorted(eligible_levels, reverse=True):
+            if len(authorized) >= target:
+                break
+
+            available = qualifs_by_level.get(level, [])
+            if not available:
+                continue
+
+            # Take 1-3 qualifications from this level
+            num_from_level = random.randint(1, min(3, len(available), target - len(authorized)))
+            selected = random.sample(available, k=num_from_level)
+
+            for codeq, nomq in selected:
+                authorized.append((codeq, coded))
+
+        rows.extend(authorized)
+
+    # Remove duplicates and return
+    rows = list(set(rows))
+    return rows
 
 def gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates):
     rows = []
