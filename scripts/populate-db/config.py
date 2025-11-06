@@ -73,3 +73,9 @@ PRODUITS_VARIANTS_MAX = int(os.getenv("PRODUITS_VARIANTS_MAX", "4"))
 # Calendar Settings
 CALENDRIER_DATE_DEBUT = os.getenv("CALENDRIER_DATE_DEBUT", "2000-01-01")
 CALENDRIER_DATE_FIN = os.getenv("CALENDRIER_DATE_FIN", "2025-10-31")
+
+# Dual Workplace Configuration
+DUAL_WORKPLACE_PERCENTAGE = float(os.getenv("DUAL_WORKPLACE_PERCENTAGE", "0.01"))  # Default 1%
+
+# Address Configuration
+ADRESSE_EMPLOYEES_PRO_IS_NEARBY = os.getenv("ADRESSE_EMPLOYEES_PRO_IS_NEARBY", "true").lower() == "true"

@@ -8,7 +8,7 @@ import string
 import os
 import csv
 
-from config import CALENDRIER_DATE_DEBUT, CALENDRIER_DATE_FIN
+from config import ADRESSE_EMPLOYEES_PRO_IS_NEARBY, CALENDRIER_DATE_DEBUT, CALENDRIER_DATE_FIN
 
 def genCalendrier(start_year=CALENDRIER_DATE_DEBUT, end_year=CALENDRIER_DATE_FIN, split=False, format="%Y-%m-%d"):
     from datetime import datetime, timedelta
@@ -71,7 +71,7 @@ def getRandomStreet():
     path = "./data/adresses/adresses-france-extract.csv"
     if not os.path.exists(path):
         raise FileNotFoundError(f"Address file not found: {path}. Please execute get-and-extract.sh first.")
-    
+
     rows = []
     with open(path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
@@ -114,7 +114,7 @@ def getRandomStreet():
         street_full = f"{numero} {nom_voie}"
     else:
         street_full = nom_voie
-    
+
     # Ensure max 50 bytes (Oracle VARCHAR2 measures in bytes for multi-byte charsets)
     while len(street_full.encode('utf-8')) > 50:
         street_full = street_full[:-1]
@@ -135,6 +135,9 @@ def getRandomStreetNearby(base_street_info):
     """
     if not base_street_info:
         raise ValueError("base_street_info is required")
+
+    if not ADRESSE_EMPLOYEES_PRO_IS_NEARBY:
+        return getRandomStreet()
 
     # allow passing either the dict returned by getRandomStreet or a postal code string
     if isinstance(base_street_info, str):
@@ -174,17 +177,17 @@ def getRandomStreetNearby(base_street_info):
         raise ValueError(f"No address lines found with postal code starting with '{dep_prefix}' in {path}")
 
     numero, nom_voie, code_postal, nom_commune = random.choice(matches)
-    
+
     # Apply DB size constraints
     nom_voie = nom_voie[:50]
     code_postal = code_postal[:5]
     nom_commune = nom_commune[:50]
-    
+
     if numero and numero not in ("", "-", "0"):
         street_full = f"{numero} {nom_voie}"
     else:
         street_full = nom_voie
-    
+
     # Ensure max 50 bytes (Oracle VARCHAR2 measures in bytes for multi-byte charsets)
     while len(street_full.encode('utf-8')) > 50:
         street_full = street_full[:-1]

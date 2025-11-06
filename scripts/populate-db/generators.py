@@ -12,7 +12,8 @@ from config import (
     PV_EXPRESS_MIN, PV_EXPRESS_MAX,
     PV_GSB_MIN, PV_GSB_MAX,
     PV_EXPRESS_PROBABILITY,
-    PRODUITS_VARIANTS_MIN, PRODUITS_VARIANTS_MAX
+    PRODUITS_VARIANTS_MIN, PRODUITS_VARIANTS_MAX,
+    DUAL_WORKPLACE_PERCENTAGE
 )
 from constants import *
 from utils import getRandomFullName, getRandomPhone, getRandomStreet, getRandomStreetNearby
@@ -39,7 +40,7 @@ def gen_employes_by_factory_size(factory_info, pv_info):
     Generate employees based on factory size classification and point of sale types.
     - Factory employees: based on factory_info taille
     - PV employees: 8-15 for Brico-Express, 75-150 for GSB
-    - 1% of employees work at both a factory AND a point of sale
+    - Configurable % of employees work at both a factory AND a point of sale (DUAL_WORKPLACE_PERCENTAGE)
     - Professional address is near their workplace
 
     Parameters:
@@ -139,32 +140,35 @@ def gen_employes_by_factory_size(factory_info, pv_info):
 
     print(f"  ✓ Completed: {pv_count} PV employees")
 
-    # Assign 1% of employees to work at BOTH factory and PV
+    # Assign dual workplace employees based on configuration
     total_employees = len(rows)
-    num_dual_workers = max(1, int(total_employees * 0.01))
+    num_dual_workers = max(0, int(total_employees * DUAL_WORKPLACE_PERCENTAGE))
     
-    print(f"\n👥 Assigning {num_dual_workers} employees to dual workplaces (factory + PV)...")
-    
-    # Get available factories and PVs
-    available_factories = list(factory_info.keys())
-    available_pvs = list(pv_info.keys())
-    
-    # Randomly select employees to have dual assignments
-    dual_worker_indices = random.sample(range(total_employees), num_dual_workers)
-    
-    for idx in dual_worker_indices:
-        current_workplace = employee_workplace[idx]
+    if num_dual_workers > 0:
+        print(f"\n👥 Assigning {num_dual_workers} employees ({DUAL_WORKPLACE_PERCENTAGE*100:.1f}%) to dual workplaces (factory + PV)...")
         
-        # If currently only factory, add a random PV
-        if current_workplace[0][0] == 'factory':
-            random_pv = random.choice(available_pvs)
-            current_workplace.append(('pv', random_pv))
-        # If currently only PV, add a random factory
-        elif current_workplace[0][0] == 'pv':
-            random_factory = random.choice(available_factories)
-            current_workplace.append(('factory', random_factory))
+        # Get available factories and PVs
+        available_factories = list(factory_info.keys())
+        available_pvs = list(pv_info.keys())
+        
+        # Randomly select employees to have dual assignments
+        dual_worker_indices = random.sample(range(total_employees), num_dual_workers)
+        
+        for idx in dual_worker_indices:
+            current_workplace = employee_workplace[idx]
+            
+            # If currently only factory, add a random PV
+            if current_workplace[0][0] == 'factory':
+                random_pv = random.choice(available_pvs)
+                current_workplace.append(('pv', random_pv))
+            # If currently only PV, add a random factory
+            elif current_workplace[0][0] == 'pv':
+                random_factory = random.choice(available_factories)
+                current_workplace.append(('factory', random_factory))
 
-    print(f"  ✓ Completed: {num_dual_workers} dual workplace assignments")
+        print(f"  ✓ Completed: {num_dual_workers} dual workplace assignments")
+    else:
+        print(f"\n👥 Dual workplace feature disabled (DUAL_WORKPLACE_PERCENTAGE=0)")
 
     print("\n" + "=" * 60)
     print(f"✅ Total employees generated: {len(rows)}")
