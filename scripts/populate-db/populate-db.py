@@ -45,6 +45,8 @@ def main():
         print("\n📦 Generating product ranges...")
         gammes = gen_gammes()
         cur.executemany("INSERT INTO GAMME(CODEG, NOMG) VALUES (:1,:2)", gammes)
+        cur.execute("SELECT CODEG, NOMG FROM GAMME ORDER BY CODEG")
+        gammes_with_ids = cur.fetchall()
         print(f"  ✓ Completed: {len(gammes)} product ranges")
 
         print("\n📅 Inserting calendar data...")
@@ -70,6 +72,12 @@ def main():
                            VALUES (:1,:2,:3,:4,:5,:6)""", pvs)
         cur.execute("SELECT CODEPV FROM POINTS_DE_VENTE ORDER BY CODEPV")
         pvs_ids = [row[0] for row in cur.fetchall()]
+
+        # Rebuild pv_info with actual database IDs
+        pv_info_with_db_ids = {}
+        for idx, pv_id in enumerate(pvs_ids, start=1):
+            if idx in pv_info:
+                pv_info_with_db_ids[pv_id] = pv_info[idx]
 
         # Generate factory types with addresses and get factory info (classification and size)
         print("\n🏭 Classifying factories...")
@@ -97,6 +105,20 @@ def main():
                            VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10)""", employes)
         cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
         employes_ids = [row[0] for row in cur.fetchall()]
+
+        # Remap employee_workplace to use actual database IDs
+        employee_workplace_remapped = []
+        for workplace_type, workplace_id in employee_workplace:
+            if workplace_type == 'pv':
+                # workplace_id is sequential (1, 2, 3...), map to actual DB ID
+                if workplace_id <= len(pvs_ids):
+                    actual_pv_id = pvs_ids[workplace_id - 1]  # pvs_ids is 0-indexed
+                    employee_workplace_remapped.append((workplace_type, actual_pv_id))
+                else:
+                    employee_workplace_remapped.append((workplace_type, workplace_id))
+            else:
+                # Factory IDs should already be correct
+                employee_workplace_remapped.append((workplace_type, workplace_id))
 
         print("\n🎓 Generating qualifications...")
         qualifs = gen_qualifs()
@@ -141,7 +163,7 @@ def main():
         produits_rows = cur.fetchall()
 
         print("\n👨‍💼 Assigning product range managers...")
-        responsable = gen_responsable_with_ids(employes_ids, gammes, cal_yyyy)
+        responsable = gen_responsable_with_ids(employes_ids, gammes_with_ids, cal_yyyy)
         cur.executemany("""INSERT INTO RESPONSABLE(CODEE,CODEG,ANNEE)
                            VALUES (:1,:2,:3)""", responsable)
         print(f"  ✓ Completed: {len(responsable)} manager assignments")
@@ -169,31 +191,42 @@ def main():
         cur.executemany("""INSERT INTO ASSEMBLER(CODEP_EST_COMPOSE,CODEP_COMPOSE,QTE_ASSEMBL)
                            VALUES (:1,:2,:3)""", assembler)
         print(f"  ✓ Completed: {len(assembler)} assembly relationships")
+
+        print("\n🏭 Generating manufacturing records...")
+        fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_rows, factory_info, cal_yyyy_mm_dd)
+        cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)
+                           VALUES (:1,:2,:3,:4)""", fabriquer)
+        print(f"  ✓ Completed: {len(fabriquer)} manufacturing records")
+
+        payer2 = gen_payer2(gammes_with_ids)
+        cur.executemany("""INSERT INTO PAYER2(CODEG,ANNEE,INDICERETROCESSIONG)
+                           VALUES (:1,:2,:3)""", payer2)
+
+        print("\n💰 Generating product pricing...")
+        produits_ids = [row[0] for row in produits_rows]
+        facturer = gen_facturer_with_ids(produits_ids, cal_split)
+        cur.executemany("""INSERT INTO FACTURER(CODEP,MOIS,ANNEE,PRIXUNITP)
+                           VALUES (:1,:2,:3,:4)""", facturer)
+        print(f"  ✓ Completed: {len(facturer)} pricing records")
+
+        print("\n🛒 Generating sales records...")
+        vendre = gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info_with_db_ids, employee_workplace_remapped, cal_split)
+        cur.executemany("""INSERT INTO VENDRE(CODEE,CODEPV,CODEP,MOIS,ANNEE,QTE_VENDUE)
+                           VALUES (:1,:2,:3,:4,:5,:6)""", vendre)
+        print(f"  ✓ Completed: {len(vendre)} sales records")
+
+        print("\n⏰ Generating factory work hours...")
+        trav_u = gen_travailler_usine_with_ids(employes_ids, departements_ids, employee_workplace_remapped, cal_split)
+        cur.executemany("""INSERT INTO TRAVAILLER_USINE(CODEE,CODED,MOIS,ANNEE,NBHEURES_U)
+                           VALUES (:1,:2,:3,:4,:5)""", trav_u)
+        print(f"  ✓ Completed: {len(trav_u)} factory work hour records")
+
+        print("\n🏪 Generating point of sale work hours...")
+        trav_pv = gen_travailler_pv_with_ids(employes_ids, pvs_ids, employee_workplace_remapped, cal_split)
+        cur.executemany("""INSERT INTO TRAVAILLER_PT_VENTE(CODEE,CODEPV,MOIS,ANNEE,NBHEURES_PV)
+                           VALUES (:1,:2,:3,:4,:5)""", trav_pv)
+        print(f"  ✓ Completed: {len(trav_pv)} PV work hour records")
         # '''
-
-        # fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates)
-        # cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)
-        #                    VALUES (:1,:2,:3,:4)""", fabriquer)
-
-        # payer2 = gen_payer2(gammes)
-        # cur.executemany("""INSERT INTO PAYER2(CODEG,ANNEE,INDICERETROCESSIONG)
-        #                    VALUES (:1,:2,:3)""", payer2)
-
-        # facturer = gen_facturer_with_ids(produits_ids, cal3)
-        # cur.executemany("""INSERT INTO FACTURER(CODEP,MOIS,ANNEE,PRIXUNITP)
-        #                    VALUES (:1,:2,:3,:4)""", facturer)
-
-        # vendre = gen_vendre_with_ids(employes_ids, pvs_ids, produits_ids, cal3)
-        # cur.executemany("""INSERT INTO VENDRE(CODEE,CODEPV,CODEP,MOIS,ANNEE,QTE_VENDUE)
-        #                    VALUES (:1,:2,:3,:4,:5,:6)""", vendre)
-
-        # trav_u = gen_travailler_usine_with_ids(employes_ids, departements_ids, cal3)
-        # cur.executemany("""INSERT INTO TRAVAILLER_USINE(CODEE,CODED,MOIS,ANNEE,NBHEURES_U)
-        #                    VALUES (:1,:2,:3,:4,:5)""", trav_u)
-
-        # trav_pv = gen_travailler_pv_with_ids(employes_ids, pvs_ids, cal3)
-        # cur.executemany("""INSERT INTO TRAVAILLER_PT_VENTE(CODEE,CODEPV,MOIS,ANNEE,NBHEURES_PV)
-        #                    VALUES (:1,:2,:3,:4,:5)""", trav_pv)
 
         print("\n💾 Committing all changes to database...")
         con.commit()
