@@ -16,6 +16,7 @@ from config import (
 )
 from constants import *
 from utils import getRandomFullName, getRandomPhone, getRandomStreet, getRandomStreetNearby
+from string_utils import truncate_to_bytes
 
 def gen_employes(n=None):
     """Legacy function - use gen_employes_by_factory_size instead"""
@@ -39,29 +40,29 @@ def gen_employes_by_factory_size(factory_info, pv_info):
     - Factory employees: based on factory_info taille
     - PV employees: 8-15 for Brico-Express, 75-150 for GSB
     - Professional address is near their workplace
-    
+
     Parameters:
     - factory_info: dict with factory_id -> {classification, taille, types, address}
     - pv_info: list of tuples (codepv, type_pv, address_info)
-    
+
     Returns: (list of employee tuples, list of workplace assignments)
     """
     rows = []
     employee_workplace = []  # Track where each employee works
-    
+
     print("\n" + "=" * 60)
     print("=== GENERATING EMPLOYEES ===")
     print("=" * 60)
-    
+
     # Generate factory employees
     total_factory = sum(info['taille'] for info in factory_info.values())
     print(f"\n📍 Generating {total_factory} factory employees...")
-    
+
     factory_count = 0
     for factory_id, info in factory_info.items():
         factory_address = info.get('address')
         num_employees = info['taille']
-        
+
         for i in range(num_employees):
             fullname = getRandomFullName()
             streetPerso = getRandomStreet()
@@ -70,32 +71,32 @@ def gen_employes_by_factory_size(factory_info, pv_info):
                 streetPro = getRandomStreetNearby(factory_address)
             else:
                 streetPro = getRandomStreetNearby(streetPerso)
-            
-            # Limit all strings to 50 characters
+
+            # Limit all strings to match database constraints (byte-aware for UTF-8)
             rows.append((
-                fullname["last_name"][:50], 
-                fullname["first_name"][:50], 
-                streetPerso["street"][:50], 
-                streetPerso["postal_code"][:50], 
-                streetPerso["city"][:50],
-                streetPro["street"][:50], 
-                streetPro["postal_code"][:50], 
-                streetPro["city"][:50],
-                getRandomPhone("perso")[:50], 
-                getRandomPhone("pro")[:50]
+                truncate_to_bytes(fullname["last_name"], 50),
+                truncate_to_bytes(fullname["first_name"], 50),
+                truncate_to_bytes(streetPerso["street"], 50),
+                truncate_to_bytes(streetPerso["postal_code"], 5),
+                truncate_to_bytes(streetPerso["city"], 50),
+                truncate_to_bytes(streetPro["street"], 50),
+                truncate_to_bytes(streetPro["postal_code"], 5),
+                truncate_to_bytes(streetPro["city"], 50),
+                truncate_to_bytes(getRandomPhone("perso"), 10),
+                truncate_to_bytes(getRandomPhone("pro"), 10)
             ))
             employee_workplace.append(('factory', factory_id))
-            
+
             factory_count += 1
             if factory_count % 500 == 0:
                 print(f"  ├─ Progress: {factory_count}/{total_factory} factory employees")
-    
+
     print(f"  ✓ Completed: {factory_count} factory employees")
-    
+
     # Generate point of sale employees
     print(f"\n🏪 Generating point of sale employees...")
     pv_count = 0
-    
+
     for codepv, pv_data in pv_info.items():
         # Determine number of employees based on type
         is_express = pv_data['is_express']
@@ -103,46 +104,46 @@ def gen_employes_by_factory_size(factory_info, pv_info):
             num_employees = random.randint(PV_EXPRESS_MIN, PV_EXPRESS_MAX)
         else:  # GSB
             num_employees = random.randint(PV_GSB_MIN, PV_GSB_MAX)
-        
+
         # Get address info for nearby professional address
         pv_address = {
             'postal_code': pv_data['postal_code'],
             'city': pv_data['city']
         }
-        
+
         for _ in range(num_employees):
             fullname = getRandomFullName()
             streetPerso = getRandomStreet()
             # Professional address near point of sale
             streetPro = getRandomStreetNearby(pv_address)
-            
-            # Limit all strings to 50 characters
+
+            # Limit all strings to match database constraints (byte-aware for UTF-8)
             rows.append((
-                fullname["last_name"][:50], 
-                fullname["first_name"][:50], 
-                streetPerso["street"][:50], 
-                streetPerso["postal_code"][:50], 
-                streetPerso["city"][:50],
-                streetPro["street"][:50], 
-                streetPro["postal_code"][:50], 
-                streetPro["city"][:50],
-                getRandomPhone("perso")[:50], 
-                getRandomPhone("pro")[:50]
+                truncate_to_bytes(fullname["last_name"], 50),
+                truncate_to_bytes(fullname["first_name"], 50),
+                truncate_to_bytes(streetPerso["street"], 50),
+                truncate_to_bytes(streetPerso["postal_code"], 5),
+                truncate_to_bytes(streetPerso["city"], 50),
+                truncate_to_bytes(streetPro["street"], 50),
+                truncate_to_bytes(streetPro["postal_code"], 5),
+                truncate_to_bytes(streetPro["city"], 50),
+                truncate_to_bytes(getRandomPhone("perso"), 10),
+                truncate_to_bytes(getRandomPhone("pro"), 10)
             ))
             employee_workplace.append(('pv', codepv))
-            
+
             pv_count += 1
             if pv_count % 500 == 0:
                 print(f"  ├─ Progress: {pv_count} PV employees")
-    
+
     print(f"  ✓ Completed: {pv_count} PV employees")
-    
+
     print("\n" + "=" * 60)
     print(f"✅ Total employees generated: {len(rows)}")
     print(f"   ├─ Factory employees: {factory_count}")
     print(f"   └─ PV employees: {pv_count}")
     print("=" * 60 + "\n")
-    
+
     return rows, employee_workplace
 
 def gen_qualifs():
@@ -164,13 +165,13 @@ def gen_usines(n=NOMBRE_USINES):
     print(f"\n🏭 Generating {n} factories...")
     for code in range(1, n+1):
         street_info = getRandomStreet()
-        nom_usine = f"Usine {street_info['city']}"[:50]
+        nom_usine = f"Usine {street_info['city']}"
         rows.append((
-            nom_usine, 
-            street_info['street'][:50], 
-            street_info['postal_code'][:50], 
-            street_info['city'][:50], 
-            getRandomPhone("pro")[:50]
+            truncate_to_bytes(nom_usine, 50),
+            truncate_to_bytes(street_info['street'], 50),
+            truncate_to_bytes(street_info['postal_code'], 5),
+            truncate_to_bytes(street_info['city'], 50),
+            truncate_to_bytes(getRandomPhone("pro"), 10)
         ))
     print(f"  ✓ Completed: {n} factories")
     return rows
@@ -257,27 +258,27 @@ def gen_points_vente(n=NOMBRE_POINTS_VENTE):
         is_express = random.random() < PV_EXPRESS_PROBABILITY
         street_info = getRandomStreet()
         if is_express:
-            nom_pv = f"Brico-Express {street_info['city']}"[:50]
+            nom_pv = f"Brico-Express {street_info['city']}"
             type_pv = "Brico-Express"
         else:
-            nom_pv = f"GSB {street_info['city']}"[:50]
+            nom_pv = f"GSB {street_info['city']}"
             type_pv = "GSB"
-        
+
         row = (
-            nom_pv, 
-            street_info['street'][:50], 
-            street_info['postal_code'][:50], 
-            street_info['city'][:50], 
-            getRandomPhone("pro")[:50],
+            truncate_to_bytes(nom_pv, 50),
+            truncate_to_bytes(street_info['street'], 50),
+            truncate_to_bytes(street_info['postal_code'], 5),
+            truncate_to_bytes(street_info['city'], 50),
+            truncate_to_bytes(getRandomPhone("pro"), 10),
             type_pv
         )
         rows.append(row)
         pv_info[code] = {
             'is_express': is_express,
-            'postal_code': street_info['postal_code'],
+            'postal_code': truncate_to_bytes(street_info['postal_code'], 5),
             'city': street_info['city']
         }
-    
+
     print(f"  ✓ Completed: {n} points of sale")
     return rows, pv_info
 
@@ -322,7 +323,7 @@ def gen_produits():
             modele = random.randint(100, 999)
             nom_final = f"{nom_produit}"[:50]
             rows.append((nom_final, marque[:50], codeg))
-        
+
         total_processed += 1
         if total_processed % 50 == 0:
             print(f"  Progress: {total_processed}/{len(PRODUITS)} product types processed...")
