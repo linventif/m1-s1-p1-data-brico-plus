@@ -39,6 +39,7 @@ def gen_employes_by_factory_size(factory_info, pv_info):
     Generate employees based on factory size classification and point of sale types.
     - Factory employees: based on factory_info taille
     - PV employees: 8-15 for Brico-Express, 75-150 for GSB
+    - 1% of employees work at both a factory AND a point of sale
     - Professional address is near their workplace
 
     Parameters:
@@ -48,7 +49,7 @@ def gen_employes_by_factory_size(factory_info, pv_info):
     Returns: (list of employee tuples, list of workplace assignments)
     """
     rows = []
-    employee_workplace = []  # Track where each employee works
+    employee_workplace = []  # Track where each employee works (can be list of workplaces)
 
     print("\n" + "=" * 60)
     print("=== GENERATING EMPLOYEES ===")
@@ -85,7 +86,7 @@ def gen_employes_by_factory_size(factory_info, pv_info):
                 truncate_to_bytes(getRandomPhone("perso"), 10),
                 truncate_to_bytes(getRandomPhone("pro"), 10)
             ))
-            employee_workplace.append(('factory', factory_id))
+            employee_workplace.append([('factory', factory_id)])
 
             factory_count += 1
             if factory_count % 500 == 0:
@@ -130,7 +131,7 @@ def gen_employes_by_factory_size(factory_info, pv_info):
                 truncate_to_bytes(getRandomPhone("perso"), 10),
                 truncate_to_bytes(getRandomPhone("pro"), 10)
             ))
-            employee_workplace.append(('pv', codepv))
+            employee_workplace.append([('pv', codepv)])
 
             pv_count += 1
             if pv_count % 500 == 0:
@@ -138,10 +139,38 @@ def gen_employes_by_factory_size(factory_info, pv_info):
 
     print(f"  ✓ Completed: {pv_count} PV employees")
 
+    # Assign 1% of employees to work at BOTH factory and PV
+    total_employees = len(rows)
+    num_dual_workers = max(1, int(total_employees * 0.01))
+    
+    print(f"\n👥 Assigning {num_dual_workers} employees to dual workplaces (factory + PV)...")
+    
+    # Get available factories and PVs
+    available_factories = list(factory_info.keys())
+    available_pvs = list(pv_info.keys())
+    
+    # Randomly select employees to have dual assignments
+    dual_worker_indices = random.sample(range(total_employees), num_dual_workers)
+    
+    for idx in dual_worker_indices:
+        current_workplace = employee_workplace[idx]
+        
+        # If currently only factory, add a random PV
+        if current_workplace[0][0] == 'factory':
+            random_pv = random.choice(available_pvs)
+            current_workplace.append(('pv', random_pv))
+        # If currently only PV, add a random factory
+        elif current_workplace[0][0] == 'pv':
+            random_factory = random.choice(available_factories)
+            current_workplace.append(('factory', random_factory))
+
+    print(f"  ✓ Completed: {num_dual_workers} dual workplace assignments")
+
     print("\n" + "=" * 60)
     print(f"✅ Total employees generated: {len(rows)}")
     print(f"   ├─ Factory employees: {factory_count}")
-    print(f"   └─ PV employees: {pv_count}")
+    print(f"   ├─ PV employees: {pv_count}")
+    print(f"   └─ Dual workplace employees: {num_dual_workers}")
     print("=" * 60 + "\n")
 
     return rows, employee_workplace

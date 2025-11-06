@@ -108,17 +108,20 @@ def main():
 
         # Remap employee_workplace to use actual database IDs
         employee_workplace_remapped = []
-        for workplace_type, workplace_id in employee_workplace:
-            if workplace_type == 'pv':
-                # workplace_id is sequential (1, 2, 3...), map to actual DB ID
-                if workplace_id <= len(pvs_ids):
-                    actual_pv_id = pvs_ids[workplace_id - 1]  # pvs_ids is 0-indexed
-                    employee_workplace_remapped.append((workplace_type, actual_pv_id))
+        for workplaces in employee_workplace:
+            remapped_workplaces = []
+            for workplace_type, workplace_id in workplaces:
+                if workplace_type == 'pv':
+                    # workplace_id is sequential (1, 2, 3...), map to actual DB ID
+                    if workplace_id <= len(pvs_ids):
+                        actual_pv_id = pvs_ids[workplace_id - 1]  # pvs_ids is 0-indexed
+                        remapped_workplaces.append((workplace_type, actual_pv_id))
+                    else:
+                        remapped_workplaces.append((workplace_type, workplace_id))
                 else:
-                    employee_workplace_remapped.append((workplace_type, workplace_id))
-            else:
-                # Factory IDs should already be correct
-                employee_workplace_remapped.append((workplace_type, workplace_id))
+                    # Factory IDs should already be correct
+                    remapped_workplaces.append((workplace_type, workplace_id))
+            employee_workplace_remapped.append(remapped_workplaces)
 
         print("\n🎓 Generating qualifications...")
         qualifs = gen_qualifs()

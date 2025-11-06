@@ -574,7 +574,7 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
     - pvs_ids: list of point of sale IDs
     - produits_rows: [(CODEP, NOMP, MARQUEP, CODEG), ...]
     - pv_info: dict with PV details (is_express, postal_code, city)
-    - employee_workplace: list of tuples (workplace_type, workplace_id)
+    - employee_workplace: list of lists containing (workplace_type, workplace_id) tuples
     - cal3: list of (month, year) tuples
 
     Returns: [(CODEE, CODEPV, CODEP, MOIS, ANNEE, QTE_VENDUE), ...]
@@ -585,13 +585,14 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
 
     # Build mapping of employees to their workplaces
     pv_employees = {}  # pv_id -> [employee_ids]
-    for idx, (workplace_type, workplace_id) in enumerate(employee_workplace):
-        if workplace_type == 'pv':
-            if workplace_id not in pv_employees:
-                pv_employees[workplace_id] = []
-            # Employee ID is idx + 1 (assuming sequential IDs starting from 1)
-            if idx < len(employes_ids):
-                pv_employees[workplace_id].append(employes_ids[idx])
+    for idx, workplaces in enumerate(employee_workplace):
+        if idx < len(employes_ids):
+            # Check if this employee works at any PV
+            for workplace_type, workplace_id in workplaces:
+                if workplace_type == 'pv':
+                    if workplace_id not in pv_employees:
+                        pv_employees[workplace_id] = []
+                    pv_employees[workplace_id].append(employes_ids[idx])
 
     # Get all product IDs
     all_products = [codep for codep, nomp, marquep, codeg in produits_rows]
@@ -730,13 +731,13 @@ def gen_payer1_with_ids(employes_ids, cal4):
 
 def gen_travailler_usine_with_ids(employes_ids, departements_ids, employee_workplace, cal3):
     """
-    Generate factory work hours for factory employees only.
+    Generate factory work hours for factory employees (including dual workers).
     Employees work in departments at their assigned factory.
 
     Parameters:
     - employes_ids: list of employee IDs
     - departements_ids: list of department IDs
-    - employee_workplace: list of (workplace_type, workplace_id) tuples
+    - employee_workplace: list of lists containing (workplace_type, workplace_id) tuples
     - cal3: list of (month, year) tuples
 
     Returns: [(CODEE, CODED, MOIS, ANNEE, NBHEURES_U), ...]
@@ -745,11 +746,15 @@ def gen_travailler_usine_with_ids(employes_ids, departements_ids, employee_workp
 
     print("\n⏰ Generating factory work hours...")
 
-    # Get factory employees only
+    # Get factory employees (including those who work at both factory and PV)
     factory_employees = []
-    for idx, (workplace_type, workplace_id) in enumerate(employee_workplace):
-        if workplace_type == 'factory' and idx < len(employes_ids):
-            factory_employees.append((employes_ids[idx], workplace_id))
+    for idx, workplaces in enumerate(employee_workplace):
+        if idx < len(employes_ids):
+            # Check if this employee works at any factory
+            for workplace_type, workplace_id in workplaces:
+                if workplace_type == 'factory':
+                    factory_employees.append((employes_ids[idx], workplace_id))
+                    break  # Only add once even if multiple factories
 
     # Sort calendar chronologically for continuous employment
     sorted_cal = sorted(cal3, key=lambda x: (x[1], x[0]))  # Sort by (year, month)
@@ -780,6 +785,10 @@ def gen_travailler_usine_with_ids(employes_ids, departements_ids, employee_workp
             # Work until present (end of calendar)
             end_idx = len(sorted_cal)
 
+        # Check if this is a dual worker
+        emp_idx = employes_ids.index(emp_id)
+        is_dual_worker = len(employee_workplace[emp_idx]) > 1
+
         # Generate work hours for EVERY month from start to end (continuous employment)
         for month_idx in range(start_idx, end_idx):
             month, year = sorted_cal[month_idx]
@@ -788,8 +797,13 @@ def gen_travailler_usine_with_ids(employes_ids, departements_ids, employee_workp
             for dept_id in assigned_depts:
                 # Determine if full-time or part-time (80% full-time, 20% part-time)
                 if random.random() < 0.8:
-                    # Full-time: 120-160 hours per month
-                    hours = round(random.uniform(120, 160), 2)
+                    # Adjust hours if dual worker (split time between workplaces)
+                    if is_dual_worker:
+                        # Dual workers: 60-80 hours at factory (part-time)
+                        hours = round(random.uniform(60, 80), 2)
+                    else:
+                        # Full-time: 120-160 hours per month
+                        hours = round(random.uniform(120, 160), 2)
                 else:
                     # Part-time: 35-119 hours per month
                     hours = round(random.uniform(35, 119), 2)
@@ -806,13 +820,13 @@ def gen_travailler_usine_with_ids(employes_ids, departements_ids, employee_workp
 
 def gen_travailler_pv_with_ids(employes_ids, pvs_ids, employee_workplace, cal3):
     """
-    Generate point of sale work hours for PV employees only.
+    Generate point of sale work hours for PV employees (including dual workers).
     Employees work at their assigned point of sale.
 
     Parameters:
     - employes_ids: list of employee IDs
     - pvs_ids: list of point of sale IDs
-    - employee_workplace: list of (workplace_type, workplace_id) tuples
+    - employee_workplace: list of lists containing (workplace_type, workplace_id) tuples
     - cal3: list of (month, year) tuples
 
     Returns: [(CODEE, CODEPV, MOIS, ANNEE, NBHEURES_PV), ...]
@@ -821,11 +835,15 @@ def gen_travailler_pv_with_ids(employes_ids, pvs_ids, employee_workplace, cal3):
 
     print("\n🏪 Generating point of sale work hours...")
 
-    # Get PV employees only
+    # Get PV employees (including those who work at both factory and PV)
     pv_employees = []
-    for idx, (workplace_type, workplace_id) in enumerate(employee_workplace):
-        if workplace_type == 'pv' and idx < len(employes_ids):
-            pv_employees.append((employes_ids[idx], workplace_id))
+    for idx, workplaces in enumerate(employee_workplace):
+        if idx < len(employes_ids):
+            # Check if this employee works at any PV
+            for workplace_type, workplace_id in workplaces:
+                if workplace_type == 'pv':
+                    pv_employees.append((employes_ids[idx], workplace_id))
+                    break  # Only add once even if multiple PVs
 
     # Sort calendar chronologically for continuous employment
     sorted_cal = sorted(cal3, key=lambda x: (x[1], x[0]))  # Sort by (year, month)
@@ -846,14 +864,23 @@ def gen_travailler_pv_with_ids(employes_ids, pvs_ids, employee_workplace, cal3):
             # Work until present (end of calendar)
             end_idx = len(sorted_cal)
 
+        # Check if this is a dual worker
+        emp_idx = employes_ids.index(emp_id)
+        is_dual_worker = len(employee_workplace[emp_idx]) > 1
+
         # Generate work hours for EVERY month from start to end (continuous employment)
         for month_idx in range(start_idx, end_idx):
             month, year = sorted_cal[month_idx]
 
             # Determine if full-time or part-time (75% full-time, 25% part-time)
             if random.random() < 0.75:
-                # Full-time: 120-169 hours per month
-                hours = round(random.uniform(120, 169), 2)
+                # Adjust hours if dual worker
+                if is_dual_worker:
+                    # Dual workers: 60-80 hours at PV (part-time)
+                    hours = round(random.uniform(60, 80), 2)
+                else:
+                    # Full-time: 120-169 hours per month
+                    hours = round(random.uniform(120, 169), 2)
             else:
                 # Part-time: 50-119 hours per month
                 hours = round(random.uniform(50, 119), 2)
