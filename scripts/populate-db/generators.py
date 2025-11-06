@@ -21,6 +21,82 @@ def gen_employes(n=NOMBRE_EMPLOYES_PAR_USINE * NOMBRE_USINES + NOMBRE_POINTS_VEN
         ))
     return rows
 
+def gen_employes_by_factory_size(factory_info, pv_info):
+    """
+    Generate employees based on factory size classification and point of sale types.
+    - Factory employees: based on factory_info taille
+    - PV employees: 8-15 for Brico-Express, 75-150 for GSB
+    - Professional address is near their workplace
+    
+    Parameters:
+    - factory_info: dict with factory_id -> {classification, taille, types, address}
+    - pv_info: list of tuples (codepv, type_pv, address_info)
+    
+    Returns: (list of employee tuples, list of workplace assignments)
+    """
+    rows = []
+    employee_workplace = []  # Track where each employee works
+    
+    # Generate factory employees
+    for factory_id, info in factory_info.items():
+        factory_address = info.get('address')
+        num_employees = info['taille']
+        
+        for _ in range(num_employees):
+            fullname = getRandomFullName()
+            streetPerso = getRandomStreet()
+            # Professional address near factory
+            if factory_address:
+                streetPro = getRandomStreetNearby(factory_address)
+            else:
+                streetPro = getRandomStreetNearby(streetPerso)
+            
+            rows.append((
+                fullname["last_name"], fullname["first_name"], 
+                streetPerso["street"], streetPerso["postal_code"], streetPerso["city"],
+                streetPro["street"], streetPro["postal_code"], streetPro["city"],
+                getRandomPhone("perso"), getRandomPhone("pro")
+            ))
+            employee_workplace.append(('factory', factory_id))
+    
+    # Generate point of sale employees
+    total_pv_employees = 0
+    for codepv, type_pv, pv_address in pv_info:
+        # Determine number of employees based on type
+        if type_pv == "Brico-Express":
+            num_employees = random.randint(8, 15)
+        else:  # GSB
+            num_employees = random.randint(75, 150)
+        
+        total_pv_employees += num_employees
+        
+        for _ in range(num_employees):
+            fullname = getRandomFullName()
+            streetPerso = getRandomStreet()
+            # Professional address near point of sale
+            if pv_address:
+                streetPro = getRandomStreetNearby(pv_address)
+            else:
+                streetPro = getRandomStreetNearby(streetPerso)
+            
+            rows.append((
+                fullname["last_name"], fullname["first_name"], 
+                streetPerso["street"], streetPerso["postal_code"], streetPerso["city"],
+                streetPro["street"], streetPro["postal_code"], streetPro["city"],
+                getRandomPhone("perso"), getRandomPhone("pro")
+            ))
+            employee_workplace.append(('pv', codepv))
+    
+    total_factory = sum(info['taille'] for info in factory_info.values())
+    
+    print(f"\n=== Employee Generation ===")
+    print(f"Factory employees: {total_factory}")
+    print(f"Point of sale employees: {total_pv_employees}")
+    print(f"Total employees: {len(rows)}")
+    print("=" * 40)
+    
+    return rows, employee_workplace
+
 def gen_qualifs():
     """Génère des qualifications avec des diplômes français (1 par titre)"""
     rows = []
@@ -119,6 +195,8 @@ def gen_gammes():
 
 def gen_points_vente(n=NOMBRE_POINTS_VENTE):
     rows = []
+    pv_info = []  # Store PV info for employee generation
+    
     for code in range(1, n+1):
         street_info = getRandomStreet()
         type_pv = random.choices(PV_TYPES, weights=[0.6, 0.4])[0]
@@ -128,7 +206,15 @@ def gen_points_vente(n=NOMBRE_POINTS_VENTE):
             getRandomPhone("pro"),
             type_pv
         ))
-    return rows
+        
+        # Store for later use in employee generation (code will be assigned by DB)
+        pv_info.append((code, type_pv, {
+            'street': street_info['street'],
+            'postal_code': street_info['postal_code'],
+            'city': street_info['city']
+        }))
+    
+    return rows, pv_info
 
 def gen_produits():
     """

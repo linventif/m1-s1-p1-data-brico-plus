@@ -70,11 +70,11 @@ def getRandomPhone(type="pro"):
 def getRandomStreet():
     path = "./data/adresses/adresses-france-extract.csv"
     if not os.path.exists(path):
-        raise FileNotFoundError(f"{path} not found. Please execute get-and-extract.sh before trying to generate data.")
-
-    with open(path, "r", encoding="utf-8") as f:
+        raise FileNotFoundError(f"Address file not found: {path}. Please execute get-and-extract.sh first.")
+    
+    rows = []
+    with open(path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
-        rows = []
         for r in reader:
             if not r:
                 continue
@@ -84,6 +84,14 @@ def getRandomStreet():
             # skip possible header
             if any(h.lower() in r[i].lower() for i, h in enumerate(["numero", "nom_voie", "code_postal", "nom_commune"]) if i < len(r)):
                 continue
+            # Handle rows with more than 4 fields (merge extra fields into nom_voie)
+            if len(r) > 4:
+                # numero, nom_voie (with commas), code_postal, nom_commune
+                numero = r[0]
+                nom_voie = ','.join(r[1:-2])  # Join all middle fields
+                code_postal = r[-2]
+                nom_commune = r[-1]
+                r = [numero, nom_voie, code_postal, nom_commune]
             rows.append(r)
 
     if not rows:

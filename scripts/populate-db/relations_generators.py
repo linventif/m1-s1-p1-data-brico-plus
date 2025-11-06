@@ -63,17 +63,17 @@ def gen_assembler_with_ids(produits_rows):
     """
     Generate assembly relationships between products and their components.
     A product that has components in PRODUITS will be assembled from those components.
-    
+
     Parameters:
     - produits_rows: [(CODEP, NOMP, MARQUEP, CODEG), ...] from database
-    
+
     Returns: [(CODEP_EST_COMPOSE, CODEP_COMPOSE, QTE_ASSEMBL), ...]
     where CODEP_EST_COMPOSE is the final product and CODEP_COMPOSE is the component
     """
     from constants import PRODUITS
-    
+
     rows = []
-    
+
     # Build a mapping from product name to CODEP
     name_to_codep = {}
     for codep, nomp, marquep, codeg in produits_rows:
@@ -82,22 +82,22 @@ def gen_assembler_with_ids(produits_rows):
         base_name = nomp
         if " Model-" in nomp:
             base_name = nomp.split(" Model-")[0]
-        
+
         # Map both full name and base name to CODEP
         name_to_codep[nomp] = codep
         if base_name not in name_to_codep:
             name_to_codep[base_name] = codep
-    
+
     # For each product in PRODUITS that has components
     for prod_name, gamme, type_usine, composants in PRODUITS:
         if not composants:  # Skip products without components
             continue
-        
+
         # Find the CODEP for this product
         prod_codep = name_to_codep.get(prod_name)
         if not prod_codep:
             # Try to find any product variant that matches (e.g., with Model-XX suffix)
-            matching_products = [codep for name, codep in name_to_codep.items() 
+            matching_products = [codep for name, codep in name_to_codep.items()
                                 if name.startswith(prod_name) or prod_name in name]
             if matching_products:
                 # Create assembly for all variants of this product
@@ -107,24 +107,107 @@ def gen_assembler_with_ids(produits_rows):
                         if composant_codep and composant_codep != variant_codep:
                             rows.append((variant_codep, composant_codep, qte))
             continue
-        
+
         # For each component of this product
         for composant_name, qte in composants:
             composant_codep = name_to_codep.get(composant_name)
             if composant_codep and composant_codep != prod_codep:
                 # Product is composed of this component with given quantity
                 rows.append((prod_codep, composant_codep, qte))
-    
+
     # Remove duplicates
     rows = list(set(rows))
     return rows
 
-def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids):
+def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids, usines_full_data):
+    """
+    Generate factory type assignments with specialization and size classification.
+    - Specialized factories: focus on 1 type (larger, 300-500 employees)
+    - Semi-specialized: 2 types (medium, 200-350 employees)
+    - General factories: 3-4 types (smaller, 150-250 employees)
+
+    Parameters:
+    - usines_with_ids: [(CODEU, NOMU), ...]
+    - typeu_with_ids: [(CODETU, NOMTU), ...]
+    - usines_full_data: [(CODEU, NOMU, RUEU, CPOSTALU, VILLEU), ...]
+
+    Returns: (rows, factory_info)
+    """
     rows = []
-    for u_id, u_nom in usines_with_ids:
-        for t_id, t_nom in random.sample(typeu_with_ids, k=random.randint(1, min(2, len(typeu_with_ids)))):
+    factory_info = {}  # Store classification and size per factory
+
+    # Build address mapping
+    address_map = {}
+    for codeu, nomu, rue, cp, ville in usines_full_data:
+        address_map[codeu] = {
+            'street': rue,
+            'postal_code': cp,
+            'city': ville
+        }
+
+    # Categorize factories
+    num_factories = len(usines_with_ids)
+    num_specialized = max(1, num_factories // 3)  # ~33% specialized
+    num_semi = max(1, num_factories // 3)          # ~33% semi-specialized
+    num_general = num_factories - num_specialized - num_semi  # ~33% general
+
+    factory_list = list(usines_with_ids)
+    random.shuffle(factory_list)
+
+    idx = 0
+
+    # Specialized factories: 1 type, 300-500 employees
+    for i in range(num_specialized):
+        if idx >= len(factory_list):
+            break
+        u_id, u_nom = factory_list[idx]
+        selected_type = random.choice(typeu_with_ids)
+        rows.append((u_id, selected_type[0]))
+        taille = random.randint(300, 500)
+        factory_info[u_id] = {
+            "classification": "specialized",
+            "taille": taille,
+            "types": [selected_type[1]],
+            "address": address_map.get(u_id)
+        }
+        idx += 1
+
+    # Semi-specialized factories: 2 types, 200-350 employees
+    for i in range(num_semi):
+        if idx >= len(factory_list):
+            break
+        u_id, u_nom = factory_list[idx]
+        selected_types = random.sample(typeu_with_ids, k=2)
+        for t_id, t_nom in selected_types:
             rows.append((u_id, t_id))
-    return rows
+        taille = random.randint(200, 350)
+        factory_info[u_id] = {
+            "classification": "semi-specialized",
+            "taille": taille,
+            "types": [t[1] for t in selected_types],
+            "address": address_map.get(u_id)
+        }
+        idx += 1
+
+    # General factories: 3-4 types, 150-250 employees
+    for i in range(num_general):
+        if idx >= len(factory_list):
+            break
+        u_id, u_nom = factory_list[idx]
+        num_types = random.randint(3, min(4, len(typeu_with_ids)))
+        selected_types = random.sample(typeu_with_ids, k=num_types)
+        for t_id, t_nom in selected_types:
+            rows.append((u_id, t_id))
+        taille = random.randint(150, 250)
+        factory_info[u_id] = {
+            "classification": "general",
+            "taille": taille,
+            "types": [t[1] for t in selected_types],
+            "address": address_map.get(u_id)
+        }
+        idx += 1
+
+    return rows, factory_info
 
 def gen_diriger_with_ids(employes_ids, departements_ids, cal2_dates):
     """

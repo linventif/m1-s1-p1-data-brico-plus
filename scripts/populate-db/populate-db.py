@@ -17,14 +17,15 @@ def main():
     with get_connection() as con:
         cur = con.cursor()
 
+        clear_all_data(cur)
+
         cal_yyyy_mm_dd = genCalendrier()
         cal_yyyy_mm_dd = [(d,) for d in cal_yyyy_mm_dd]
         cal_yyyy = genCalendrier(format="%Y")
         cal_yyyy = list(set([(d.year,) for d in cal_yyyy]))
         cal_split = genCalendrier(split=True)
 
-        '''
-        clear_all_data(cur)
+        # '''
 
         typeu = gen_typeu()
         cur.executemany("INSERT INTO TYPEU(NOMTU) VALUES (:1)", typeu)
@@ -39,7 +40,39 @@ def main():
         cur.executemany("INSERT INTO CALENDRIER3(MOIS, ANNEE) VALUES (:1,:2)", cal_split)
         cur.executemany("INSERT INTO CALENDRIER4(ANNEE) VALUES (:1)", cal_yyyy)
 
-        employes = gen_employes()
+        # Generate factories first
+        usines = gen_usines()
+        cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
+                           VALUES (:1,:2,:3,:4,:5)""", usines)
+        cur.execute("SELECT CODEU, NOMU FROM USINES ORDER BY CODEU")
+        usines_with_ids = cur.fetchall()
+        cur.execute("SELECT CODEU, NOMU, RUEU, CPOSTALU, VILLEU FROM USINES ORDER BY CODEU")
+        usines_full_data = cur.fetchall()
+
+        # Generate points of sale with address info BEFORE factory types
+        pvs, pv_info = gen_points_vente()
+        cur.executemany("""INSERT INTO POINTS_DE_VENTE
+                           (NOMPV,RUEPV,CPOSTALPV,VILLEPV,TELPV,TYPEPV)
+                           VALUES (:1,:2,:3,:4,:5,:6)""", pvs)
+        cur.execute("SELECT CODEPV FROM POINTS_DE_VENTE ORDER BY CODEPV")
+        pvs_ids = [row[0] for row in cur.fetchall()]
+
+        # Generate factory types with addresses and get factory info (classification and size)
+        avoir_type, factory_info = gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids, usines_full_data)
+        cur.executemany("INSERT INTO AVOIR_TYPE(CODEU,CODETU) VALUES (:1,:2)", avoir_type)
+
+        # Print factory classification summary
+        print("\n=== Factory Classification Summary ===")
+        for u_id, info in sorted(factory_info.items()):
+            usine_nom = next((nom for uid, nom in usines_with_ids if uid == u_id), f"Usine {u_id}")
+            print(f"{usine_nom}:")
+            print(f"  Classification: {info['classification']}")
+            print(f"  Size: {info['taille']} employees")
+            print(f"  Types: {', '.join(info['types'])}")
+        print("=" * 40)
+
+        # Generate employees based on factory sizes and PV types
+        employes, employee_workplace = gen_employes_by_factory_size(factory_info, pv_info)
         cur.executemany("""INSERT INTO EMPLOYES
                            (NOME,PRENOME,RUEPERSE,CPOSTALPERSE,VILLEPERSE,
                             RUEPROE,CPOSTALPROE,VILLEPROE,TELPERSE,TELPROE)
@@ -73,34 +106,21 @@ def main():
         posseder = gen_posseder_with_ids(employes_ids, qualifs_ids)
         cur.executemany("INSERT INTO POSSEDER(CODEE,CODEQ) VALUES (:1,:2)", posseder)
 
-        usines = gen_usines()
-        cur.executemany("""INSERT INTO USINES(NOMU,RUEU,CPOSTALU,VILLEU,TELU)
-                           VALUES (:1,:2,:3,:4,:5)""", usines)
-        cur.execute("SELECT CODEU, NOMU FROM USINES ORDER BY CODEU")
-        usines_with_ids = cur.fetchall()
-
         departements = gen_departements_with_ids(usines_with_ids)
         cur.executemany("""INSERT INTO DEPARTEMENTS(NOMD,CODEU) VALUES (:1,:2)""", departements)
-        cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
-        departements_ids = [row[0] for row in cur.fetchall()]
-
-        pvs = gen_points_vente()
-        cur.executemany("""INSERT INTO POINTS_DE_VENTE
-                           (NOMPV,RUEPV,CPOSTALPV,VILLEPV,TELPV,TYPEPV)
-                           VALUES (:1,:2,:3,:4,:5,:6)""", pvs)
-        cur.execute("SELECT CODEPV FROM POINTS_DE_VENTE ORDER BY CODEPV")
-        pvs_ids = [row[0] for row in cur.fetchall()]
+        cur.execute("SELECT CODED, NOMD, CODEU FROM DEPARTEMENTS ORDER BY CODED")
+        departements_rows = cur.fetchall()
 
         produits = gen_produits()
         cur.executemany("""INSERT INTO PRODUITS(NOMP,MARQUEP,CODEG) VALUES (:1,:2,:3)""", produits)
-        cur.execute("SELECT CODEP FROM PRODUITS ORDER BY CODEP")
-        produits_ids = [row[0] for row in cur.fetchall()]
+        cur.execute("SELECT CODEP, NOMP, MARQUEP, CODEG FROM PRODUITS ORDER BY CODEP")
+        produits_rows = cur.fetchall()
 
         responsable = gen_responsable_with_ids(employes_ids, gammes, cal_yyyy)
         cur.executemany("""INSERT INTO RESPONSABLE(CODEE,CODEG,ANNEE)
                            VALUES (:1,:2,:3)""", responsable)
 
-
+        departements_ids = [row[0] for row in departements_rows]
         diriger = gen_diriger_with_ids(employes_ids, departements_ids, cal_yyyy_mm_dd)
         cur.executemany("""INSERT INTO DIRIGER(CODEE,CODED,DATEDEBUTDIR)
                            VALUES (:1,:2,:3)""", diriger)
@@ -115,10 +135,7 @@ def main():
         assembler = gen_assembler_with_ids(produits_rows)
         cur.executemany("""INSERT INTO ASSEMBLER(CODEP_EST_COMPOSE,CODEP_COMPOSE,QTE_ASSEMBL)
                            VALUES (:1,:2,:3)""", assembler)
-        '''
-
-        # avoir_type = gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids)
-        # cur.executemany("INSERT INTO AVOIR_TYPE(CODEU,CODETU) VALUES (:1,:2)", avoir_type)
+        # '''
 
         # fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates)
         # cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)
