@@ -111,11 +111,11 @@ def main():
 
         autoriser = gen_autoriser_with_ids(qualifs_rows, departements_rows)
         cur.executemany("INSERT INTO AUTORISER(CODEQ,CODED) VALUES (:1,:2)", autoriser)
-        '''
 
-        # assembler = gen_assembler_with_ids(produits_ids)
-        # cur.executemany("""INSERT INTO ASSEMBLER(CODEP_EST_COMPOSE,CODEP_COMPOSE,QTE_ASSEMBL)
-        #                    VALUES (:1,:2,:3)""", assembler)
+        assembler = gen_assembler_with_ids(produits_rows)
+        cur.executemany("""INSERT INTO ASSEMBLER(CODEP_EST_COMPOSE,CODEP_COMPOSE,QTE_ASSEMBL)
+                           VALUES (:1,:2,:3)""", assembler)
+        '''
 
         # avoir_type = gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids)
         # cur.executemany("INSERT INTO AVOIR_TYPE(CODEU,CODETU) VALUES (:1,:2)", avoir_type)

@@ -59,18 +59,64 @@ def gen_posseder_with_ids(employes_ids, qualifs_ids):
                 rows.append((e_id, q_id))
         return rows[:max(500, len(rows))]
 
-def gen_assembler_with_ids(produits_ids):
+def gen_assembler_with_ids(produits_rows):
+    """
+    Generate assembly relationships between products and their components.
+    A product that has components in PRODUITS will be assembled from those components.
+    
+    Parameters:
+    - produits_rows: [(CODEP, NOMP, MARQUEP, CODEG), ...] from database
+    
+    Returns: [(CODEP_EST_COMPOSE, CODEP_COMPOSE, QTE_ASSEMBL), ...]
+    where CODEP_EST_COMPOSE is the final product and CODEP_COMPOSE is the component
+    """
+    from constants import PRODUITS
+    
     rows = []
-    used = set()
-    for _ in range(500):
-        a, b = random.sample(produits_ids, 2)
-        if a == b:
+    
+    # Build a mapping from product name to CODEP
+    name_to_codep = {}
+    for codep, nomp, marquep, codeg in produits_rows:
+        # Store by base product name (without model number suffix)
+        # Extract base name by removing model numbers like "Model-XX"
+        base_name = nomp
+        if " Model-" in nomp:
+            base_name = nomp.split(" Model-")[0]
+        
+        # Map both full name and base name to CODEP
+        name_to_codep[nomp] = codep
+        if base_name not in name_to_codep:
+            name_to_codep[base_name] = codep
+    
+    # For each product in PRODUITS that has components
+    for prod_name, gamme, type_usine, composants in PRODUITS:
+        if not composants:  # Skip products without components
             continue
-        key = (a, b)
-        if key in used:
+        
+        # Find the CODEP for this product
+        prod_codep = name_to_codep.get(prod_name)
+        if not prod_codep:
+            # Try to find any product variant that matches (e.g., with Model-XX suffix)
+            matching_products = [codep for name, codep in name_to_codep.items() 
+                                if name.startswith(prod_name) or prod_name in name]
+            if matching_products:
+                # Create assembly for all variants of this product
+                for variant_codep in matching_products:
+                    for composant_name, qte in composants:
+                        composant_codep = name_to_codep.get(composant_name)
+                        if composant_codep and composant_codep != variant_codep:
+                            rows.append((variant_codep, composant_codep, qte))
             continue
-        used.add(key)
-        rows.append((a, b, random.randint(1, 10)))
+        
+        # For each component of this product
+        for composant_name, qte in composants:
+            composant_codep = name_to_codep.get(composant_name)
+            if composant_codep and composant_codep != prod_codep:
+                # Product is composed of this component with given quantity
+                rows.append((prod_codep, composant_codep, qte))
+    
+    # Remove duplicates
+    rows = list(set(rows))
     return rows
 
 def gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids):
