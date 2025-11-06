@@ -414,24 +414,24 @@ def gen_responsable_with_ids(employes_ids, gammes, cal4):
 def gen_payer2(gammes):
     """
     Generate commission/retrocession indices for product ranges by year.
-    
+
     Parameters:
     - gammes: list of (CODEG, NOMG) tuples from GAMME table
-    
+
     Returns: [(CODEG, ANNEE, INDICERETROCESSIONG), ...]
     """
     rows = []
     all_years = list(range(2000, 2026))  # More recent years only
-    
+
     print("\n📊 Generating product range commissions...")
-    
+
     for year in all_years:
         num_records = random.randint(2, min(10, len(gammes)))
         selected_gammes = random.sample(gammes, k=num_records)
         for g_code, g_name in selected_gammes:
             indice = round(random.uniform(0.01, 0.99), 2)
             rows.append((g_code, year, indice))
-    
+
     print(f"  ✓ Generated: {len(rows)} commission records")
     return rows
 
@@ -441,31 +441,31 @@ def gen_fabriquer_with_ids(usines_with_ids, produits_rows, factory_info, cal1_da
     - Specialized factories produce more of their specific product types
     - Larger factories produce more volume
     - Production is consistent over time with seasonal variations
-    
+
     Parameters:
     - usines_with_ids: [(CODEU, NOMU), ...]
     - produits_rows: [(CODEP, NOMP, MARQUEP, CODEG), ...]
     - factory_info: dict with factory details (classification, taille, types, address)
     - cal1_dates: list of manufacturing dates
-    
+
     Returns: [(CODEU, CODEP, DATEFAB, QTE_FAB), ...]
     """
     from constants import PRODUITS, GAMMES
-    
+
     rows = []
-    
+
     print("\n🏭 Generating manufacturing records...")
-    
+
     # Build mapping of product types to factory types
     type_to_gammes = {}
     for prod_name, gamme, type_usine, composants in PRODUITS:
         if type_usine not in type_to_gammes:
             type_to_gammes[type_usine] = set()
         type_to_gammes[type_usine].add(gamme)
-    
+
     # Build mapping from CODEG to gamme name
     gamme_code_to_name = {f"G{str(i).zfill(2)}": nom for i, nom in enumerate(GAMMES, start=1)}
-    
+
     # Build products by gamme
     products_by_gamme = {}
     for codep, nomp, marquep, codeg in produits_rows:
@@ -473,17 +473,17 @@ def gen_fabriquer_with_ids(usines_with_ids, produits_rows, factory_info, cal1_da
         if gamme_name not in products_by_gamme:
             products_by_gamme[gamme_name] = []
         products_by_gamme[gamme_name].append((codep, nomp, marquep))
-    
+
     # Sample dates for manufacturing (not every day)
     sampled_dates = random.sample(cal1_dates, min(len(cal1_dates), 500))
-    
+
     total_records = 0
-    
+
     for u_id, info in factory_info.items():
         factory_types = info['types']  # List of factory type names
         factory_size = info['taille']
         classification = info['classification']
-        
+
         # Determine production capacity based on size
         if factory_size >= 400:
             daily_capacity_range = (100, 500)
@@ -494,16 +494,16 @@ def gen_fabriquer_with_ids(usines_with_ids, produits_rows, factory_info, cal1_da
         else:
             daily_capacity_range = (20, 150)
             num_products = random.randint(5, 15)
-        
+
         # Find gammes this factory can produce based on its types
         factory_gammes = set()
         for factory_type in factory_types:
             if factory_type in type_to_gammes:
                 factory_gammes.update(type_to_gammes[factory_type])
-        
+
         if not factory_gammes:
             continue
-        
+
         # Select products this factory will manufacture
         factory_products = []
         for gamme in factory_gammes:
@@ -516,17 +516,17 @@ def gen_fabriquer_with_ids(usines_with_ids, produits_rows, factory_info, cal1_da
                     num_from_gamme = random.randint(5, 12)
                 else:  # general
                     num_from_gamme = random.randint(2, 6)
-                
+
                 num_from_gamme = min(num_from_gamme, len(available_products))
                 selected = random.sample(available_products, k=num_from_gamme)
                 factory_products.extend(selected)
-        
+
         if not factory_products:
             continue
-        
+
         # Limit to num_products
         factory_products = random.sample(factory_products, k=min(num_products, len(factory_products)))
-        
+
         # Generate manufacturing records for this factory
         # Specialized factories produce more consistently
         if classification == "specialized":
@@ -535,22 +535,22 @@ def gen_fabriquer_with_ids(usines_with_ids, produits_rows, factory_info, cal1_da
             dates_to_use = random.sample(sampled_dates, k=min(len(sampled_dates), 60))
         else:
             dates_to_use = random.sample(sampled_dates, k=min(len(sampled_dates), 40))
-        
+
         for date_tuple in dates_to_use:
             date = date_tuple[0] if isinstance(date_tuple, tuple) else date_tuple
-            
+
             # Each day, produce some of the products
             num_products_today = random.randint(len(factory_products) // 3, len(factory_products))
             products_today = random.sample(factory_products, k=num_products_today)
-            
+
             for codep, nomp, marquep in products_today:
                 quantity = random.randint(daily_capacity_range[0], daily_capacity_range[1])
                 rows.append((u_id, codep, date, quantity))
                 total_records += 1
-                
+
                 if total_records % 1000 == 0:
                     print(f"  ├─ Progress: {total_records} manufacturing records")
-    
+
     print(f"  ✓ Completed: {total_records} manufacturing records")
     return rows
 
@@ -568,7 +568,7 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
     - Larger stores sell more products
     - Employees only sell at their assigned location
     - Sales volume depends on store type (Express vs GSB)
-    
+
     Parameters:
     - employes_ids: list of employee IDs
     - pvs_ids: list of point of sale IDs
@@ -576,13 +576,13 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
     - pv_info: dict with PV details (is_express, postal_code, city)
     - employee_workplace: list of tuples (workplace_type, workplace_id)
     - cal3: list of (month, year) tuples
-    
+
     Returns: [(CODEE, CODEPV, CODEP, MOIS, ANNEE, QTE_VENDUE), ...]
     """
     rows = []
-    
+
     print("\n🛒 Generating sales records...")
-    
+
     # Build mapping of employees to their workplaces
     pv_employees = {}  # pv_id -> [employee_ids]
     for idx, (workplace_type, workplace_id) in enumerate(employee_workplace):
@@ -592,25 +592,25 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
             # Employee ID is idx + 1 (assuming sequential IDs starting from 1)
             if idx < len(employes_ids):
                 pv_employees[workplace_id].append(employes_ids[idx])
-    
+
     # Get all product IDs
     all_products = [codep for codep, nomp, marquep, codeg in produits_rows]
-    
+
     # Sample calendar dates (not every month for every combination)
     sampled_cal = random.sample(cal3, min(len(cal3), 200))
-    
+
     total_records = 0
-    
+
     for pv_id in pvs_ids:
         # Get PV info
         pv_data = pv_info.get(pv_id, {})
         is_express = pv_data.get('is_express', True)
-        
+
         # Get employees working at this PV
         pv_employee_list = pv_employees.get(pv_id, [])
         if not pv_employee_list:
             continue
-        
+
         # Determine sales characteristics based on store type
         if is_express:
             # Brico-Express: smaller store, fewer products, lower volume
@@ -622,32 +622,32 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_rows, pv_info, employee_
             num_products_sold = random.randint(80, 200)
             sales_per_employee_month = random.randint(5, 15)
             quantity_range = (5, 100)
-        
+
         # Select products this store sells
         store_products = random.sample(all_products, k=min(num_products_sold, len(all_products)))
-        
+
         # Sample dates for this store
         store_dates = random.sample(sampled_cal, k=min(len(sampled_cal), 40))
-        
+
         for month, year in store_dates:
             # Select employees who make sales this month
-            num_selling_employees = min(len(pv_employee_list), 
+            num_selling_employees = min(len(pv_employee_list),
                                        max(1, len(pv_employee_list) // 2))
             selling_employees = random.sample(pv_employee_list, k=num_selling_employees)
-            
+
             for emp_id in selling_employees:
                 # Number of different products this employee sells this month
                 num_products_emp = random.randint(1, sales_per_employee_month)
                 emp_products = random.sample(store_products, k=min(num_products_emp, len(store_products)))
-                
+
                 for prod_id in emp_products:
                     quantity = random.randint(quantity_range[0], quantity_range[1])
                     rows.append((emp_id, pv_id, prod_id, month, year, quantity))
                     total_records += 1
-                    
+
                     if total_records % 1000 == 0:
                         print(f"  ├─ Progress: {total_records} sales records")
-    
+
     print(f"  ✓ Completed: {total_records} sales records")
     return rows
 
@@ -698,13 +698,11 @@ def gen_payer1_with_ids(employes_ids, cal4):
         else:
             end_year = current_year
 
-        # Generate salary for each year from start to end
+        # Generate salary for EVERY year from start to end (continuous coverage)
         base_salary = round(random.uniform(1200, 5000), 2)
 
-        for year in years:
-            if year < start_year or year > end_year:
-                continue
-
+        # Generate continuous salary records for all years in employment
+        for year in range(start_year, end_year + 1):
             # Calculate salary increase based on SMIC trends
             # Apply cumulative increase based on SMIC average with ±5% variation
             increase_factor = 1.0
@@ -734,99 +732,138 @@ def gen_travailler_usine_with_ids(employes_ids, departements_ids, employee_workp
     """
     Generate factory work hours for factory employees only.
     Employees work in departments at their assigned factory.
-    
+
     Parameters:
     - employes_ids: list of employee IDs
     - departements_ids: list of department IDs
     - employee_workplace: list of (workplace_type, workplace_id) tuples
     - cal3: list of (month, year) tuples
-    
+
     Returns: [(CODEE, CODED, MOIS, ANNEE, NBHEURES_U), ...]
     """
     rows = []
-    
+
     print("\n⏰ Generating factory work hours...")
-    
+
     # Get factory employees only
     factory_employees = []
     for idx, (workplace_type, workplace_id) in enumerate(employee_workplace):
         if workplace_type == 'factory' and idx < len(employes_ids):
             factory_employees.append((employes_ids[idx], workplace_id))
-    
-    # Sample calendar dates
-    sampled_cal = random.sample(cal3, min(len(cal3), 150))
-    
+
+    # Sort calendar chronologically for continuous employment
+    sorted_cal = sorted(cal3, key=lambda x: (x[1], x[0]))  # Sort by (year, month)
+
     total_records = 0
-    
+
     for emp_id, factory_id in factory_employees:
         # Get departments (we'd need dept->factory mapping, so use all for now)
         factory_depts = departements_ids
-        
+
         if not factory_depts:
             continue
-        
-        # Employee works several months
-        num_months = random.randint(6, min(len(sampled_cal), 24))
-        work_months = random.sample(sampled_cal, k=num_months)
-        
-        for month, year in work_months:
-            # Usually works in 1-2 departments per month
-            num_depts = random.randint(1, min(2, len(factory_depts)))
-            depts = random.sample(factory_depts, k=num_depts)
-            
-            for dept_id in depts:
-                # Work hours: 35-160 hours per month (part-time to full-time)
-                hours = round(random.uniform(35, 160), 2)
+
+        # Assign employee to 1-2 stable departments
+        num_assigned_depts = random.randint(1, min(2, len(factory_depts)))
+        assigned_depts = random.sample(factory_depts, k=num_assigned_depts)
+
+        # Determine employment period (continuous from start to end)
+        # Random start index in calendar
+        start_idx = random.randint(0, max(0, len(sorted_cal) - 12))
+
+        # 95% work until end of calendar, 5% leave early (after 6-24 months)
+        if random.random() < 0.05:
+            # Early termination after 6-24 months
+            duration = random.randint(6, min(24, len(sorted_cal) - start_idx))
+            end_idx = start_idx + duration
+        else:
+            # Work until present (end of calendar)
+            end_idx = len(sorted_cal)
+
+        # Generate work hours for EVERY month from start to end (continuous employment)
+        for month_idx in range(start_idx, end_idx):
+            month, year = sorted_cal[month_idx]
+
+            # Work in assigned departments
+            for dept_id in assigned_depts:
+                # Determine if full-time or part-time (80% full-time, 20% part-time)
+                if random.random() < 0.8:
+                    # Full-time: 120-160 hours per month
+                    hours = round(random.uniform(120, 160), 2)
+                else:
+                    # Part-time: 35-119 hours per month
+                    hours = round(random.uniform(35, 119), 2)
+
                 rows.append((emp_id, dept_id, month, year, hours))
                 total_records += 1
-                
+
                 if total_records % 1000 == 0:
                     print(f"  ├─ Progress: {total_records} factory work records")
-    
-    print(f"  ✓ Completed: {total_records} factory work hour records")
+
+    avg_records_per_emp = total_records / len(factory_employees) if factory_employees else 0
+    print(f"  ✓ Completed: {total_records} factory work hour records (~{avg_records_per_emp:.1f} per employee)")
     return rows
 
 def gen_travailler_pv_with_ids(employes_ids, pvs_ids, employee_workplace, cal3):
     """
     Generate point of sale work hours for PV employees only.
     Employees work at their assigned point of sale.
-    
+
     Parameters:
     - employes_ids: list of employee IDs
     - pvs_ids: list of point of sale IDs
     - employee_workplace: list of (workplace_type, workplace_id) tuples
     - cal3: list of (month, year) tuples
-    
+
     Returns: [(CODEE, CODEPV, MOIS, ANNEE, NBHEURES_PV), ...]
     """
     rows = []
-    
+
     print("\n🏪 Generating point of sale work hours...")
-    
+
     # Get PV employees only
     pv_employees = []
     for idx, (workplace_type, workplace_id) in enumerate(employee_workplace):
         if workplace_type == 'pv' and idx < len(employes_ids):
             pv_employees.append((employes_ids[idx], workplace_id))
-    
-    # Sample calendar dates
-    sampled_cal = random.sample(cal3, min(len(cal3), 150))
-    
+
+    # Sort calendar chronologically for continuous employment
+    sorted_cal = sorted(cal3, key=lambda x: (x[1], x[0]))  # Sort by (year, month)
+
     total_records = 0
-    
+
     for emp_id, pv_id in pv_employees:
-        # Employee works several months at their PV
-        num_months = random.randint(8, min(len(sampled_cal), 30))
-        work_months = random.sample(sampled_cal, k=num_months)
-        
-        for month, year in work_months:
-            # Work hours: 50-169 hours per month (various schedules)
-            hours = round(random.uniform(50, 169), 2)
+        # Determine employment period (continuous from start to end)
+        # Random start index in calendar
+        start_idx = random.randint(0, max(0, len(sorted_cal) - 12))
+
+        # 95% work until end of calendar, 5% leave early (after 8-30 months)
+        if random.random() < 0.05:
+            # Early termination after 8-30 months
+            duration = random.randint(8, min(30, len(sorted_cal) - start_idx))
+            end_idx = start_idx + duration
+        else:
+            # Work until present (end of calendar)
+            end_idx = len(sorted_cal)
+
+        # Generate work hours for EVERY month from start to end (continuous employment)
+        for month_idx in range(start_idx, end_idx):
+            month, year = sorted_cal[month_idx]
+
+            # Determine if full-time or part-time (75% full-time, 25% part-time)
+            if random.random() < 0.75:
+                # Full-time: 120-169 hours per month
+                hours = round(random.uniform(120, 169), 2)
+            else:
+                # Part-time: 50-119 hours per month
+                hours = round(random.uniform(50, 119), 2)
+
             rows.append((emp_id, pv_id, month, year, hours))
             total_records += 1
-            
+
             if total_records % 1000 == 0:
                 print(f"  ├─ Progress: {total_records} PV work records")
-    
-    print(f"  ✓ Completed: {total_records} PV work hour records")
+
+    avg_records_per_emp = total_records / len(pv_employees) if pv_employees else 0
+    print(f"  ✓ Completed: {total_records} PV work hour records (~{avg_records_per_emp:.1f} per employee)")
     return rows

@@ -582,10 +582,3 @@ PRODUITS = [
     ("Peinture tableau noir", "peinture et droguerie", "chaine assemblage", []),
     ("Anti-rouille", "peinture et droguerie", "chaine assemblage", []),
 ]
-
-# Index 1 in each tuple = category
-categories = [cat for _, cat, _, _ in PRODUITS]
-count_by_category = Counter(categories)
-
-for cat, count in count_by_category.items():
-    print(f"{cat}: {count}")

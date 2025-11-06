@@ -1076,18 +1076,15 @@ SELECT
     e.CODEE,
     e.NOME,
     e.PRENOME,
-
     /* adresses utiles pour analyse (perso / pro) */
     e.CPOSTALPERSE,
     e.VILLEPERSE,
     e.CPOSTALPROE,
     e.VILLEPROE,
-
     /* qualifications (via POSSEDER) */
     q.CODEQ,
     q.NOMQ,
     q.TAUXMINQ,
-
     /* direction de département (facultatif) */
     dpt.CODED       AS CODE_DEPT_DIRIGE,
     dpt.NOMD        AS NOM_DEPT_DIRIGE,
@@ -1126,36 +1123,29 @@ WHERE
     m.CODEE = e.CODEE
     AND p1.CODEE = e.CODEE
     AND p1.ANNEE = m.ANNEE
-
     /* qualification (peut y en avoir plusieurs) */
     AND pos.CODEE(+) = e.CODEE
     AND q.CODEQ(+)   = pos.CODEQ
-
     /* heures */
     AND hu.CODEE(+) = m.CODEE
     AND hu.MOIS(+)  = m.MOIS
     AND hu.ANNEE(+) = m.ANNEE
-
     AND hpv.CODEE(+) = m.CODEE
     AND hpv.MOIS(+)  = m.MOIS
     AND hpv.ANNEE(+) = m.ANNEE
-
     /* ventes / rétro (partie objectifs) */
     AND v.CODEE(+) = m.CODEE
     AND v.MOIS(+)  = m.MOIS
     AND v.ANNEE(+) = m.ANNEE
-
     /* direction d'un département sur l'année du mois */
     AND dir.CODEE(+) = e.CODEE
     AND dpt.CODED(+) = dir.CODED
     AND (dir.DATEDEBUTDIR IS NULL
          OR EXTRACT(YEAR FROM dir.DATEDEBUTDIR) <= m.ANNEE)
-
     /* responsable de gamme sur l'année */
     AND r.CODEE(+) = e.CODEE
     AND r.ANNEE(+) = m.ANNEE
     AND g.CODEG(+) = r.CODEG
-
 ORDER BY
     m.ANNEE,
     m.MOIS,
