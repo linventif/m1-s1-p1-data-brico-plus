@@ -8,7 +8,7 @@ import random
 from database import delete_table_data, get_connection, clear_all_data
 from generators import *
 from relations_generators import *
-from utils import genCalendrier
+from utils import genCalendrier, smicCalculator
 from config import USER, HOST, PORT, SERVICE
 
 random.seed(31)
@@ -105,6 +105,10 @@ def main():
         cur.executemany("""INSERT INTO RESPONSABLE(CODEE,CODEG,ANNEE)
                            VALUES (:1,:2,:3)""", responsable)
 
+
+        diriger = gen_diriger_with_ids(employes_ids, departements_ids, cal_yyyy_mm_dd)
+        cur.executemany("""INSERT INTO DIRIGER(CODEE,CODED,DATEDEBUTDIR)
+                           VALUES (:1,:2,:3)""", diriger)
         '''
 
         # autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
@@ -117,19 +121,14 @@ def main():
         # avoir_type = gen_avoir_type_with_ids(usines_with_ids, typeu_with_ids)
         # cur.executemany("INSERT INTO AVOIR_TYPE(CODEU,CODETU) VALUES (:1,:2)", avoir_type)
 
+        # cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
+        # employes_ids = [row[0] for row in cur.fetchall()]
 
-        cur.execute("SELECT CODEE FROM EMPLOYES ORDER BY CODEE")
-        employes_ids = [row[0] for row in cur.fetchall()]
+        # cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
+        # departements_ids = [row[0] for row in cur.fetchall()]
 
+        # cur.execute("DELETE FROM DIRIGER")
 
-        cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
-        departements_ids = [row[0] for row in cur.fetchall()]
-
-        cur.execute("DELETE FROM DIRIGER")
-
-        diriger = gen_diriger_with_ids(employes_ids, departements_ids, cal_yyyy_mm_dd)
-        cur.executemany("""INSERT INTO DIRIGER(CODEE,CODED,DATEDEBUTDIR)
-                           VALUES (:1,:2,:3)""", diriger)
 
         # fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates)
         # cur.executemany("""INSERT INTO FABRIQUER_ASSEMBLER1(CODEU,CODEP,DATEFAB,QTE_FAB)

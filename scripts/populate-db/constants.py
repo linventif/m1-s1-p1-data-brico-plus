@@ -214,6 +214,51 @@ QUALIFICATIONS = {
     ],
 }
 
+SMICS = [
+    {"date": "2024-11-01", "montant": 1801.80, "augmentation": 34.88, "pourcentage": 0.02},
+    {"date": "2024-01-01", "montant": 1766.92, "augmentation": 19.72, "pourcentage": 0.0113},
+    {"date": "2023-05-01", "montant": 1747.20, "augmentation": 37.92, "pourcentage": 0.0221},
+    {"date": "2023-01-01", "montant": 1709.28, "augmentation": 30.67, "pourcentage": 0.0183},
+    {"date": "2022-08-01", "montant": 1678.95, "augmentation": 33.37, "pourcentage": 0.0203},
+    {"date": "2022-05-01", "montant": 1645.58, "augmentation": 42.46, "pourcentage": 0.0264},
+    {"date": "2022-01-01", "montant": 1603.12, "augmentation": 13.65, "pourcentage": 0.0086},
+    {"date": "2021-10-01", "montant": 1589.47, "augmentation": 49.05, "pourcentage": 0.0319},
+    {"date": "2021-01-01", "montant": 1554.58, "augmentation": 14.16, "pourcentage": 0.0092},
+    {"date": "2020-01-01", "montant": 1539.42, "augmentation": 18.20, "pourcentage": 0.012},
+    {"date": "2019-01-01", "montant": 1521.22, "augmentation": 22.75, "pourcentage": 0.0152},
+    {"date": "2018-01-01", "montant": 1498.47, "augmentation": 17.75, "pourcentage": 0.012},
+    {"date": "2017-01-01", "montant": 1480.27, "augmentation": 13.65, "pourcentage": 0.0093},
+    {"date": "2016-01-01", "montant": 1466.62, "augmentation": 8.84, "pourcentage": 0.0061},
+    {"date": "2015-01-01", "montant": 1457.52, "augmentation": 12.14, "pourcentage": 0.0084},
+    {"date": "2014-01-01", "montant": 1445.38, "augmentation": 7.84, "pourcentage": 0.0055},
+    {"date": "2013-01-01", "montant": 1430.22, "augmentation": 27.25, "pourcentage": 0.0195},
+    {"date": "2012-07-01", "montant": 1425.67, "augmentation": 27.25, "pourcentage": 0.0195},
+    {"date": "2012-01-01", "montant": 1398.37, "augmentation": 4.55, "pourcentage": 0.0033},
+    {"date": "2011-12-01", "montant": 1393.82, "augmentation": 28.82, "pourcentage": 0.0212},
+    {"date": "2011-01-01", "montant": 1365.00, "augmentation": 21.23, "pourcentage": 0.0158},
+    {"date": "2010-01-01", "montant": 1343.77, "augmentation": 26.27, "pourcentage": 0.02},
+    {"date": "2009-07-01", "montant": 1337.70, "augmentation": 16.62, "pourcentage": 0.0126},
+    {"date": "2008-07-01", "montant": 1321.02, "augmentation": 12.14, "pourcentage": 0.0093},
+    {"date": "2008-05-01", "montant": 1308.88, "augmentation": 12.14, "pourcentage": 0.0094},
+    {"date": "2007-07-01", "montant": 1280.07, "augmentation": 25.79, "pourcentage": 0.0205},
+    {"date": "2006-07-01", "montant": 1254.28, "augmentation": 26.40, "pourcentage": 0.0216},
+    {"date": "2005-07-01", "montant": 1217.88, "augmentation": 37.21, "pourcentage": 0.0316},
+    {"date": "2004-07-01", "montant": 1286.09, "augmentation": 70.98, "pourcentage": 0.0581},
+    {"date": "2003-07-01", "montant": 1215.11, "augmentation": 60.84, "pourcentage": 0.0527},
+    {"date": "2002-07-01", "montant": 1154.27, "augmentation": 26.94, "pourcentage": 0.0239},
+    {"date": "2001-07-01", "montant": 1127.23, "augmentation": 26.94, "pourcentage": 0.0245},
+    {"date": "2000-07-01", "montant": 1094.00, "augmentation": None, "pourcentage": None},
+]
+
+# calcul the avg % augmentation over the years
+SMIC_AVG = 0
+count = 0
+for smic in SMICS:
+    if smic["pourcentage"] is not None:
+        SMIC_AVG += smic["pourcentage"]
+        count += 1
+SMIC_AVG /= count
+SMIC_AVG = round(SMIC_AVG, 4)
 
 # marques{ gamme: [marque1, marque2, ...] }
 MARQUES = {
