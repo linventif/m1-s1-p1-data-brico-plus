@@ -3,13 +3,12 @@ services:
     image: gvenzl/oracle-free:latest
     container_name: oracle-brico-plus
     env_file:
-      - ../.env             # ou "./.env" si ton .env est dans le même dossier
+      - ./.env
     environment:
-      # Charset Oracle
       ORACLE_CHARACTERSET: AL32UTF8
     ports:
-      - "${ORACLE_PORT:-1521}:1521"   # Oracle listener port
-      - "${OEM_PORT:-5500}:5500"      # Oracle Enterprise Manager Express
+      - "${ORACLE_PORT:-1521}:1521"
+      - "${OEM_PORT:-5500}:5500"
     volumes:
       - brico_plus_data:/opt/oracle/oradata
     restart: always
