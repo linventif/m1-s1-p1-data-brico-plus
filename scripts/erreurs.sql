@@ -1,15 +1,3 @@
-INSERT INTO PAYER2 (CODEG, ANNEE, INDICERETROCESSIONG)
-VALUES (
-  (SELECT CODEG FROM (
-      SELECT CODEG FROM GAMME
-      ORDER BY DBMS_RANDOM.VALUE
-  ) WHERE ROWNUM = 1),
-  (SELECT ANNEE FROM (
-      SELECT ANNEE FROM CALENDRIER4
-      ORDER BY DBMS_RANDOM.VALUE
-  ) WHERE ROWNUM = 1),
-  9000
-);
 
 -- Employé avec un nombre de ventes de 0 alors qu'il a bien travaillé dans un point de vente
 
