@@ -2,8 +2,9 @@
 <project version="4">
   <component name="DataSourcePerFileMappings">
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/01128fcc-80a7-4ec3-85d2-11cbb2a57383/console_1.sql" value="01128fcc-80a7-4ec3-85d2-11cbb2a57383" />
-    <file url="file://$PROJECT_DIR$/requettes.sql" value="01128fcc-80a7-4ec3-85d2-11cbb2a57383" />
+    <file url="file://$PROJECT_DIR$/requettes.sql" value="7f7cf2fd-b72e-4ee2-9245-c9ce5e2bafb5" />
     <file url="file://$PROJECT_DIR$/scripts/create-db.sql" value="01128fcc-80a7-4ec3-85d2-11cbb2a57383" />
+    <file url="file://$PROJECT_DIR$/scripts/index-db.sql" value="7f7cf2fd-b72e-4ee2-9245-c9ce5e2bafb5" />
     <file url="file://$PROJECT_DIR$/scripts/wipe-db.sql" value="01128fcc-80a7-4ec3-85d2-11cbb2a57383" />
   </component>
 </project>
