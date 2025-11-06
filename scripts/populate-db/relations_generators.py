@@ -397,6 +397,8 @@ def gen_responsable_with_ids(employes_ids, gammes, cal4):
     static_gamme = random.choice(gammes)
     fixed_responsibles = random.sample(employes_ids, k=3)
     for g in gammes:
+        # Extract code if g is a tuple (CODEG, NOMG)
+        g_code = g[0] if isinstance(g, tuple) else g
         for year in cal4:
             year_val = year[0] if isinstance(year, tuple) else year
             if g == static_gamme:
@@ -405,7 +407,7 @@ def gen_responsable_with_ids(employes_ids, gammes, cal4):
             else:
                 # For other gammes, pick a random employee
                 e = random.choice(employes_ids)
-            rows.append((e, g, year_val))
+            rows.append((e, g_code, year_val))
     # Uniqueness is guaranteed by construction (one per gamme/year)
     return rows
 
