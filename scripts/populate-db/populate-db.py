@@ -8,7 +8,7 @@ import random
 from database import delete_table_data, get_connection, clear_all_data
 from generators import *
 from relations_generators import *
-from utils import genCalendrier, smicCalculator
+from utils import genCalendrier
 from config import USER, HOST, PORT, SERVICE
 
 random.seed(31)
@@ -34,11 +34,6 @@ def main():
         gammes = gen_gammes()
         cur.executemany("INSERT INTO GAMME(CODEG, NOMG) VALUES (:1,:2)", gammes)
 
-        cal_yyyy_mm_dd = genCalendrier()
-        cal_yyyy_mm_dd = [(d,) for d in cal_yyyy_mm_dd]
-        cal_yyyy = genCalendrier(format="%Y")
-        cal_yyyy = list(set([(d.year,) for d in cal_yyyy]))
-        cal_split = genCalendrier(split=True)
         cur.executemany("INSERT INTO CALENDRIER1(DATEFAB) VALUES (:1)", cal_yyyy_mm_dd)
         cur.executemany("INSERT INTO CALENDRIER2(DATEDEBUTDIR) VALUES (:1)", cal_yyyy_mm_dd)
         cur.executemany("INSERT INTO CALENDRIER3(MOIS, ANNEE) VALUES (:1,:2)", cal_split)
@@ -109,6 +104,10 @@ def main():
         diriger = gen_diriger_with_ids(employes_ids, departements_ids, cal_yyyy_mm_dd)
         cur.executemany("""INSERT INTO DIRIGER(CODEE,CODED,DATEDEBUTDIR)
                            VALUES (:1,:2,:3)""", diriger)
+
+        payer1 = gen_payer1_with_ids(employes_ids, cal_yyyy)
+        cur.executemany("""INSERT INTO PAYER1(CODEE,ANNEE,FIXEMENSUELE,INDICESALE)
+                           VALUES (:1,:2,:3,:4)""", payer1)
         '''
 
         # autoriser = gen_autoriser_with_ids(qualifs_ids, departements_ids)
@@ -127,7 +126,7 @@ def main():
         # cur.execute("SELECT CODED FROM DEPARTEMENTS ORDER BY CODED")
         # departements_ids = [row[0] for row in cur.fetchall()]
 
-        # cur.execute("DELETE FROM DIRIGER")
+        # cur.execute("DELETE FROM PAYER1")
 
 
         # fabriquer = gen_fabriquer_with_ids(usines_with_ids, produits_ids, typeu_with_ids, cal1_dates)
@@ -146,9 +145,6 @@ def main():
         # cur.executemany("""INSERT INTO VENDRE(CODEE,CODEPV,CODEP,MOIS,ANNEE,QTE_VENDUE)
         #                    VALUES (:1,:2,:3,:4,:5,:6)""", vendre)
 
-        # payer1 = gen_payer1_with_ids(employes_ids, cal4)
-        # cur.executemany("""INSERT INTO PAYER1(CODEE,ANNEE,FIXEMENSUELE,INDICESALE)
-        #                    VALUES (:1,:2,:3,:4)""", payer1)
 
         # trav_u = gen_travailler_usine_with_ids(employes_ids, departements_ids, cal3)
         # cur.executemany("""INSERT INTO TRAVAILLER_USINE(CODEE,CODED,MOIS,ANNEE,NBHEURES_U)

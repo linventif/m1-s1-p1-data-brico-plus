@@ -234,16 +234,83 @@ def gen_vendre_with_ids(employes_ids, pvs_ids, produits_ids, cal3):
     return rows
 
 def gen_payer1_with_ids(employes_ids, cal4):
+    """
+    Generate salary payment data for employees using SMIC as reference.
+    - Each employee gets a random start date from cal4
+    - 95% of employees work until now (no end date)
+    - 5% have an end date: either ±5 years or ±10 years from start
+    - Salary increases year by year following SMIC trends with ±5% variation
+    Returns: [(CODEE, ANNEE, FIXEMENSUELE, INDICESALE), ...]
+    """
+    from constants import SMICS, SMIC_AVG
+
     rows = []
-    mandatory_years = [2024, 2025]
-    other_years = random.sample([y for y in cal4 if y not in mandatory_years], k=min(15, len(cal4)-2))
-    years = mandatory_years + other_years
+    current_year = 2025
+
+    # Extract years from cal4 (unwrap tuples if needed)
+    years = []
+    for y in cal4:
+        if isinstance(y, tuple):
+            years.append(y[0])
+        else:
+            years.append(y)
+    years = sorted(list(set(years)))
+
+    # Build SMIC lookup by year
+    smic_by_year = {}
+    for smic in SMICS:
+        year = int(smic["date"].split("-")[0])
+        if year not in smic_by_year:
+            smic_by_year[year] = smic
+
     for e_id in employes_ids:
-        for y in years:
-            fixe = round(random.uniform(1200, 5000), 2)
-            idx = random.randint(1, 15)
-            rows.append((e_id, y, fixe, idx))
-    return rows[:1000]
+        # Random start year
+        start_year = random.choice(years)
+
+        # Determine if employee has end date (5% chance)
+        has_end_date = random.random() < 0.05
+        if has_end_date:
+            # Choose range: 5 years (50%) or 10 years (50%)
+            if random.random() < 0.5:
+                year_range = random.randint(1, 5)
+            else:
+                year_range = random.randint(1, 10)
+            end_year = start_year + year_range
+            end_year = min(end_year, current_year)  # Can't be in future
+        else:
+            end_year = current_year
+
+        # Generate salary for each year from start to end
+        base_salary = round(random.uniform(1200, 5000), 2)
+
+        for year in years:
+            if year < start_year or year > end_year:
+                continue
+
+            # Calculate salary increase based on SMIC trends
+            # Apply cumulative increase based on SMIC average with ±5% variation
+            increase_factor = 1.0
+            for y in range(start_year, year):
+                # Get SMIC percentage for this year or use average
+                if y in smic_by_year and smic_by_year[y]["pourcentage"] is not None:
+                    smic_pct = smic_by_year[y]["pourcentage"]
+                else:
+                    smic_pct = SMIC_AVG
+
+                # Apply variation ±5%
+                variation = random.uniform(-0.05, 0.05)
+                yearly_increase = smic_pct * (1 + variation)
+                increase_factor *= (1 + yearly_increase)
+
+            # Calculate salary for this year
+            salary = round(base_salary * increase_factor, 2)
+
+            # Random index between 1 and 15
+            indice = random.randint(1, 15)
+
+            rows.append((e_id, year, salary, indice))
+
+    return rows
 
 def gen_travailler_usine_with_ids(employes_ids, departements_ids, cal3):
     rows = []
