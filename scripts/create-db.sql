@@ -69,7 +69,7 @@ CREATE TABLE GAMME(
 );
 
 ---------------------------------------------------------
--- 🗓️ TABLES CALENDRIERS
+-- TABLES CALENDRIERS
 ---------------------------------------------------------
 
 CREATE TABLE CALENDRIER1(
@@ -134,7 +134,7 @@ END;
 /
 
 ---------------------------------------------------------
--- 🏢 TABLES DÉPENDANTES
+-- TABLES DÉPENDANTES
 ---------------------------------------------------------
 
 CREATE TABLE DEPARTEMENTS(
@@ -170,7 +170,7 @@ CREATE TABLE PRODUITS(
 );
 
 ---------------------------------------------------------
--- 👷‍♂️ TABLES D’ASSOCIATION ET RELATIONS
+-- TABLES D’ASSOCIATION ET RELATIONS
 ---------------------------------------------------------
 
 CREATE TABLE POSSEDER(
@@ -313,3 +313,4 @@ CREATE TABLE TRAVAILLER_PT_VENTE(
    CONSTRAINT CHK_PDV_NBHEURES_PV_POSITIVE CHECK (NBHEURES_PV > 0)
 
 );
+
